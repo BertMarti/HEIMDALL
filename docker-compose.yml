@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  heimdall:
+    build: ./docker
+    ports:
+      - "8002:8000"
+      - "1194:1194/udp"
+    volumes:
+      - heimdall-data:/app/data
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - app-network
+
+volumes:
+  heimdall-data:
+
+networks:
+  app-network:
+    driver: bridge
