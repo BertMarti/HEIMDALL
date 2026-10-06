@@ -105,7 +105,7 @@ curl -k -u admin:PASSWORD "https://127.0.0.1:51843/api/client" -X POST \
 **Comando (desde otra máquina):**
 ```bash
 # Descargar config
-curl -k -u admin:PASSWORD "https://RASPBERRY-IP:51843/api/client/TEST_ID/config" > test.conf
+curl -k -u admin:PASSWORD "https://RASPBERRY-IP:51843/api/client/TEST_ID/configuration" > test.conf
 
 # Conectar
 sudo wg-quick up ./test.conf

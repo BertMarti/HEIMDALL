@@ -133,7 +133,7 @@ curl -k -u admin:$PASS "https://$IP:51843/api/client"
 Desde otra máquina con WireGuard:
 ```bash
 # Descarga el .conf de cliente
-curl -k -u admin:PASS "https://<IP>:51843/api/client/<id>/config"
+curl -k -u admin:PASS "https://<IP>:51843/api/client/<id>/configuration"
 
 # Conecta con wg-quick (Linux) o app WireGuard (Android/iPhone)
 wg-quick up ./client.conf
