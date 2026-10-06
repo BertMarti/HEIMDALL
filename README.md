@@ -174,13 +174,29 @@ Ahora, aunque tu ISP cambie tu IP pública, `micasa.duckdns.org` siempre apuntar
 ## Actualizar
 
 ```bash
-cd /ruta/a/HEIMDALL
-git pull
-docker compose pull
-docker compose up -d
+cd ~/homelab/HEIMDALL   # o donde lo clonaras
+./update.sh
 ```
 
-Tus clientes VPN seguirán funcionando. La configuración se preserva en `data/wireguard/`.
+`update.sh` hace primero una copia de seguridad, descarga los cambios del repositorio y las imágenes nuevas, y vuelve a aplicar la instalación. Tus dispositivos VPN siguen funcionando: la configuración está en `data/wireguard/`.
+
+## Copia de seguridad y restauración
+
+```bash
+./backup.sh
+```
+
+Crea `backups/heimdall-AAAAMMDD-HHMM.tar.gz` con tu `.env`, la base de datos de wg-easy (claves del servidor y de todos los dispositivos) y la autoridad de certificados del panel. **Contiene claves privadas: guárdala en un sitio seguro**. Se conservan las 7 más recientes. **Copia ese archivo fuera de la Raspberry** (a tu PC o a un USB): si formateas, es lo único que necesitas.
+
+Para restaurar (por ejemplo, en una Raspberry recién formateada):
+
+```bash
+git clone https://github.com/BertMarti/HEIMDALL.git && cd HEIMDALL
+mkdir -p backups && cp /ruta/a/heimdall-AAAAMMDD-HHMM.tar.gz backups/
+./restore.sh backups/heimdall-AAAAMMDD-HHMM.tar.gz
+```
+
+`restore.sh` pide confirmación, recupera la configuración y arranca todo con `install.sh`.
 
 ## Desinstalar
 

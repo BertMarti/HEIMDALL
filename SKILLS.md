@@ -356,3 +356,9 @@ curl -k -u admin:PASSWORD https://127.0.0.1:51843/api/client | jq
 # Espera a "Conectado"
 # Verifica: ping 10.8.0.1
 ```
+
+## Playbook: copia de seguridad, restauración y actualización
+
+1. Copia: `./backup.sh` → `backups/*.tar.gz` (guárdala fuera de la Pi).
+2. Restaurar tras formatear: clonar el repo, copiar el `.tar.gz` a `backups/` y ejecutar `./restore.sh backups/<archivo>`.
+3. Actualizar: `./update.sh` (hace copia antes).

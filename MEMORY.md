@@ -264,3 +264,8 @@ No son compromisos, solo ideas.
 - [Caddy Documentation](https://caddyserver.com/docs/)
 - [DuckDNS](https://www.duckdns.org/)
 - [Docker Networking](https://docs.docker.com/network/)
+
+## Copias de seguridad y actualización (2026-10-07)
+
+- `backup.sh`, `restore.sh` y `update.sh` añadidos y probados en la Pi: copia → cambio → restauración devuelve el estado guardado.
+- `update.sh` siempre hace copia antes de actualizar.
