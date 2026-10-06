@@ -1,0 +1,10 @@
+{
+	auto_https disable_redirects
+	skip_install_trust
+	default_sni {$LAN_IP}
+}
+
+https://{$LAN_IP}:{$WEB_PORT}, https://{$PI_HOSTNAME}.local:{$WEB_PORT}, https://localhost:{$WEB_PORT} {
+	tls internal
+	reverse_proxy wg-easy:51821
+}
