@@ -43,6 +43,12 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./data/caddy:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "--no-check-certificate", "https://localhost:${WEB_PORT:-51843}/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - heimdall
 
