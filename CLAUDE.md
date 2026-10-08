@@ -273,3 +273,6 @@ Busca `Client connected`, `Client disconnected`, o errores TLS.
 - [WireGuard](https://www.wireguard.com/)
 - [Caddy Documentation](https://caddyserver.com/docs/)
 - [DuckDNS](https://www.duckdns.org/)
+
+## Otros modelos
+Para repartir tareas con otros modelos (Copilot, GPT, Gemini, gratuitos de OpenCode Zen) sigue `AGENTS.md` → «Trabajo con varios modelos»: Claude orquesta y revisa; los delegados trabajan en un worktree aparte y nunca reciben secretos ni datos personales.
