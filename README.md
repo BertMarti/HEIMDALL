@@ -1,194 +1,234 @@
-# HEIMDALL – VPN WireGuard para tu hogar
+# HEIMDALL
 
-HEIMDALL transforma tu Raspberry Pi en un servidor VPN WireGuard. Conecta tu móvil, PC, tablet o TV desde cualquier lugar y accede a tu red como si estuvieras en casa, con bloqueo de anuncios automático si tienes SHIELD-DNS.
+**Tu propia VPN para entrar en casa desde cualquier sitio.** HEIMDALL convierte una Raspberry Pi o un PC con Linux en un servidor [WireGuard](https://www.wireguard.com) con un panel web sencillo para añadir dispositivos con un código QR.
 
-## ¿Cómo funciona en tu casa?
+Con la VPN conectada, tu móvil o portátil se comporta como si estuviera en casa: puedes abrir tus aplicaciones de casa, usar tu conexión en una Wi-Fi pública con más seguridad y, si tienes [SHIELD-DNS](https://github.com/BertMarti/SHIELD-DNS), llevarte el bloqueo de anuncios a todas partes.
 
-**SHIELD-DNS** (bloqueador de publicidad) + **HEIMDALL** (este proyecto, VPN) + **ARIA** (asistente IA):
+Funciona solo o como aplicación integrada en [ARIA](https://github.com/BertMarti/ARIA), el asistente de IA que gestiona tus aplicaciones de casa.
 
-- **SHIELD-DNS**: bloquea anuncios en el DNS de tu red (puerto 53).
-- **HEIMDALL**: VPN WireGuard para conectarte desde fuera de casa. Accede a tu red y usa SHIELD-DNS aunque viajes.
-- **ARIA**: asistente IA local en puertos 80/443.
+## Índice
+
+- [Qué incluye](#qué-incluye)
+- [Requisitos](#requisitos)
+- [Instalación](#instalación)
+- [Abre el puerto en el router](#abre-el-puerto-en-el-router)
+- [Configuración](#configuración)
+- [Si tu IP pública cambia (DNS dinámico)](#si-tu-ip-pública-cambia-dns-dinámico)
+- [Uso diario](#uso-diario)
+- [Con ARIA](#con-aria)
+- [Copias, restauración y actualización](#copias-restauración-y-actualización)
+- [Desinstalar](#desinstalar)
+- [Problemas frecuentes](#problemas-frecuentes)
+- [Limitaciones](#limitaciones)
+- [Puertos y contenedores](#puertos-y-contenedores)
+- [Licencia](#licencia)
+
+En los ejemplos, `192.168.1.50` es la máquina donde instalas HEIMDALL, `192.168.1.1` tu router y `tu-dominio.com` un dominio tuyo (opcional). Cámbialos por los tuyos.
+
+## Qué incluye
+
+- **[wg-easy](https://github.com/wg-easy/wg-easy) v15**: servidor WireGuard con panel web para crear, activar, desactivar y borrar dispositivos, con QR y archivo `.conf`.
+- **Caddy**: sirve el panel por HTTPS (`https://192.168.1.50:51843`) con un certificado propio.
+- **DuckDNS** (opcional): mantiene un nombre gratuito apuntando a tu IP pública si cambia.
+- **DNS de la VPN**: si SHIELD-DNS está instalado, los dispositivos conectados lo usan y bloquean anuncios; si no, usan `1.1.1.1`.
+- Instalación, actualización, copia y restauración **con un comando**.
+
+```
+ Móvil en 4G ──► internet ──► tu router (UDP 51820) ──► HEIMDALL ──► tu red de casa
+                                                             └──► SHIELD-DNS (sin anuncios)
+```
 
 ## Requisitos
 
-- **Raspberry Pi** (4 o 5) con Raspberry Pi OS de 64 bits, u otra distribución Linux con Docker
-- **Docker y Docker Compose** (el instalador lo pone si falta)
-- **Puerto 51820 UDP reenviado en el router** hacia la IP de la Raspberry Pi (necesario para conectar desde fuera)
-- **IP pública o DNS dinámico** (ej. DuckDNS, si tu ISP cambia tu IP frecuentemente)
+- Raspberry Pi 4/5 con Raspberry Pi OS de 64 bits, o un PC/mini-PC con Debian, Ubuntu u otra distribución Linux con soporte de WireGuard en el kernel (lo traen todos los actuales).
+- Docker con `docker compose` v2. Si falta, el instalador lo instala con el script oficial.
+- Una **IP fija** para la máquina dentro de casa (resérvala en el DHCP del router).
+- Acceso al **router** para abrir un puerto (UDP 51820).
+- Una **IP pública** en tu conexión. Si tu operador usa CG-NAT, no podrás recibir conexiones (ver [problemas frecuentes](#problemas-frecuentes)).
 
-**Nota importante:** algunos ISPs usan CG-NAT (Carrier Grade NAT). Si tu IP pública en el router difiere de tu IP mostrada en https://api.ipify.org, el reenvío de puertos no funcionará. Contacta a tu ISP para solicitar una IP pública.
+**Windows**: no soportado. WireGuard dentro de WSL2/Docker Desktop no recibe conexiones de fuera de forma fiable.
 
-## Instalación en 3 comandos
+## Instalación
+
+1. Prepara la máquina:
+   ```bash
+   sudo apt update && sudo apt install -y git openssl curl
+   ```
+2. Si también quieres SHIELD-DNS, **instálalo antes** que HEIMDALL: así la VPN lo usa como DNS automáticamente.
+3. Clona e instala:
+   ```bash
+   mkdir -p ~/homelab && cd ~/homelab
+   git clone https://github.com/BertMarti/HEIMDALL.git
+   cd HEIMDALL
+   ./install.sh
+   ```
+4. Al terminar verás la dirección del panel, el usuario y dónde está la contraseña.
+
+¿Quieres también ARIA y el bloqueador? Instala las tres aplicaciones de una vez, en el orden correcto, con el [instalador de ARIA](https://github.com/BertMarti/ARIA#inicio-rápido-5-minutos):
 
 ```bash
-git clone https://github.com/BertMarti/HEIMDALL.git
-cd HEIMDALL
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/BertMarti/ARIA/main/instalar-todo.sh | bash
 ```
 
-### Qué hace el instalador
+### Qué hace `install.sh`
 
-1. Instala Docker si no lo tienes (mediante el script oficial)
-2. Intenta cargar el módulo WireGuard del kernel (puede estar integrado)
-3. Crea `.env` y rellena automáticamente:
-   - `LAN_IP`: IP interna de la Raspberry Pi
-   - `PI_HOSTNAME`: nombre del ordenador (ej. `raspberrypi`)
-   - `WG_ADMIN_PASSWORD`: contraseña fuerte para el panel web
-   - `WG_HOST`: tu IP pública (o subdominio DuckDNS si lo configuraste)
-   - `WG_DNS`: automáticamente SHIELD-DNS si está instalado; si no, Cloudflare (1.1.1.1)
-4. Descarga imágenes Docker (wg-easy, Caddy, opcionalmente DuckDNS)
-5. Arranca los contenedores y espera a que el panel web responda
-6. Muestra las credenciales
+1. Instala Docker si no lo tienes y carga el módulo `wireguard` del kernel (si ya está integrado, solo avisa).
+2. Crea `.env` y rellena lo que falte:
+   - `LAN_IP` y `PI_HOSTNAME`: la IP y el nombre de la máquina.
+   - `WG_ADMIN_PASSWORD`: una contraseña aleatoria para el panel.
+   - `WG_HOST`: tu subdominio de DuckDNS (si lo configuraste) o tu IP pública actual.
+   - `WG_DNS`: la IP de la máquina si SHIELD-DNS está en marcha; si no, `1.1.1.1`.
+3. Arranca los contenedores (y DuckDNS, si lo configuraste) y espera a que el panel responda.
+4. Muestra la dirección del panel, el servidor y el recordatorio de abrir el puerto.
 
-**Importante:** `WG_ADMIN_*`, `WG_HOST`, `WG_PORT` y `WG_DNS` solo se aplican en el **primer arranque**. Después, cámbialos desde el panel web, no editando `.env`.
+Puedes repetirlo cuando quieras. **Ojo**: `WG_ADMIN_USER`, `WG_ADMIN_PASSWORD`, `WG_HOST`, `WG_PORT` y `WG_DNS` solo se aplican la **primera vez** que arranca. Después se cambian desde el panel web.
 
-### Reenvío de puertos (necesario para conectar desde fuera)
+### Primer acceso al panel
 
-Después de instalar, **en tu router:**
+1. Desde un dispositivo de casa, abre `https://192.168.1.50:51843` (o `https://<nombre-de-la-máquina>.local:51843`).
+2. El navegador avisará del certificado: es propio. Pulsa **Avanzado → Continuar**.
+3. Usuario: `admin` (o el de `WG_ADMIN_USER`). Contraseña:
+   ```bash
+   grep WG_ADMIN_PASSWORD ~/homelab/HEIMDALL/.env
+   ```
 
-1. Accede a la configuración del router (suele ser 192.168.1.1)
-2. Busca "Reenvío de puertos" o "Port Forwarding"
-3. Crea una regla: **Puerto externo 51820 UDP → IP interna de la Raspberry Pi, puerto 51820**
-4. Guarda
+## Abre el puerto en el router
 
-Sin este paso, **solo puedes conectar desde dispositivos en tu misma red Wi-Fi**. Desde móvil en 4G/5G o desde otra red, la VPN no funcionará.
+Sin este paso la VPN solo funciona dentro de tu propia Wi-Fi, que no sirve de mucho. Cada router es distinto, pero los pasos son parecidos:
 
-## Primero: acceso al panel web
+1. Entra en el router desde el navegador: normalmente `http://192.168.1.1` (mira la pegatina del router).
+2. Busca **Reenvío de puertos**, **Port forwarding**, **NAT**, **Servidor virtual** o **Aplicaciones**.
+3. Crea una regla:
 
-Después de instalar, accede al panel desde una máquina en tu red:
+   | Campo | Valor |
+   |---|---|
+   | Protocolo | **UDP** |
+   | Puerto externo | **51820** |
+   | IP interna | **192.168.1.50** |
+   | Puerto interno | **51820** |
 
-```
-https://<IP-de-la-Raspberry-Pi>:51843
-```
+4. Guarda (algunos routers piden reiniciar).
 
-O si tu Raspberry tiene nombre (ej. `raspberrypi.local`):
+Es el **único** puerto que hay que abrir. El panel (51843) **no** se abre a internet: adminístralo desde casa, desde la propia VPN o, si usas ARIA con Cloudflare, por `https://heimdall.tu-dominio.com`.
 
-```
-https://raspberrypi.local:51843
-```
+## Configuración
 
-**Importante:** el certificado es autofirmado. Tu navegador te mostrará una advertencia. En:
-- **Chrome/Edge/Firefox**: haz clic en "Avanzado" → "Continuar a la página"
-- **Safari**: haz clic en "Mostrar detalles" → "Acceder a este sitio web"
+Todo está en `.env` (se crea a partir de [`.env.example`](.env.example)).
 
-Usuario: `admin` (o lo que tengas en `WG_ADMIN_USER` en `.env`)  
-Contraseña: la que está en `.env` (`WG_ADMIN_PASSWORD`), generada durante la instalación.
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `TZ` | `Europe/Madrid` | Zona horaria |
+| `WG_ADMIN_USER` | `admin` | Usuario del panel (solo primer arranque) |
+| `WG_ADMIN_PASSWORD` | aleatoria (la genera `install.sh`) | Contraseña del panel (solo primer arranque) |
+| `WG_HOST` | tu subdominio DuckDNS o tu IP pública | Dirección a la que se conectan los dispositivos (solo primer arranque) |
+| `WG_PORT` | `51820` | Puerto UDP de WireGuard (solo primer arranque) |
+| `WG_DNS` | IP de la máquina si hay SHIELD-DNS; si no, `1.1.1.1` | DNS de los dispositivos conectados (solo primer arranque) |
+| `WEB_PORT` | `51843` | Puerto del panel HTTPS |
+| `LAN_IP`, `PI_HOSTNAME` | los detecta `install.sh` | Nombres con los que se sirve el panel |
+| `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` | vacías | DNS dinámico gratuito (opcional) |
 
-## Uso día a día
+Para cambiar algo marcado como «solo primer arranque» cuando ya está funcionando, usa el panel web (apartado de administración). La otra opción es empezar de cero (`./uninstall.sh --purge` y `./install.sh`), pero **todos los dispositivos tendrían que volver a escanear su QR**.
 
-### Añadir un dispositivo
+## Si tu IP pública cambia (DNS dinámico)
 
-#### Desde un móvil (recomendado)
+Muchas conexiones domésticas cambian de IP pública de vez en cuando. Si `WG_HOST` es una IP y cambia, tus dispositivos dejarán de conectar. La solución es usar un **nombre** que siempre apunte a tu IP actual.
 
-1. Instala **WireGuard** (descárgalo de la app store: iOS App Store o Google Play)
-2. Entra en el panel web (https://<IP>:51843)
-3. Haz clic en "Nuevo cliente" o "New Client"
-4. Se genera un QR
-5. En la app WireGuard del móvil: "+" → "Crear desde código QR"
-6. Escanea el QR
-7. La app te mostrará el perfil; toca "Activar" para conectar
+### Opción A: DuckDNS (gratis)
 
-**Resultado:** el móvil ahora accede a tu red como si fuera otro dispositivo en casa. Si tienes SHIELD-DNS, se bloqueará publicidad automáticamente.
+1. Entra en [duckdns.org](https://www.duckdns.org), inicia sesión y crea un subdominio, por ejemplo `micasa` (será `micasa.duckdns.org`). Copia tu **token**.
+2. En `.env`:
+   ```bash
+   DUCKDNS_SUBDOMAIN=micasa
+   DUCKDNS_TOKEN=pega-aqui-tu-token
+   ```
+3. Si es una **instalación nueva**, deja `WG_HOST` vacío y ejecuta `./install.sh`: pondrá `micasa.duckdns.org` y arrancará el contenedor `heimdall-duckdns`.
+4. Si HEIMDALL **ya estaba funcionando**, ejecuta `./install.sh` (para arrancar DuckDNS) y cambia el **Host** a `micasa.duckdns.org` en el panel web. Los dispositivos que ya tenías tienen la IP antigua dentro de su perfil: vuelve a escanear su QR.
 
-#### Desde un PC o Mac
+### Opción B: tu dominio con Cloudflare (si usas ARIA)
 
-1. Entra en el panel web
-2. Haz clic en "Nuevo cliente"
-3. Se genera un QR o un archivo `.conf`
-4. Descarga el archivo `.conf`
-5. Instala **WireGuard** en el PC (https://www.wireguard.com/)
-6. Abre WireGuard → "+" → "Importar túnel(es) desde archivo"
-7. Elige el `.conf` descargado
-8. Activa el túnel
+El script `cloudflare/configurar.sh` de ARIA arranca `cloudflare-ddns`, que mantiene `vpn.tu-dominio.com` apuntando a tu IP pública. Pon esa dirección como **Host** en el panel de HEIMDALL. Ver la [guía de instalación de ARIA](https://github.com/BertMarti/ARIA/blob/main/docs/INSTALACION.md).
 
-#### Desde un TV (Android TV / Google TV)
+## Uso diario
 
-1. TV: descarga la app **WireGuard** de Google Play
-2. En la Raspberry: genera un cliente en el panel
-3. Elige descargar el QR o el `.conf`
-4. En el TV: abre WireGuard → "+" → "Crear desde código QR"
-5. Escanea desde otro móvil si no puedes mostrar el QR en pantalla
-6. O copia el `.conf` a una USB y abrirlo desde la app
+### Añadir un móvil o tablet
 
-**Nota:** la mayoría de TVs normales no soportan WireGuard. Comprueba si tu TV es Android TV o Google TV antes de intentar.
+1. Instala la app **WireGuard** (App Store o Google Play).
+2. En el panel de HEIMDALL, crea un **cliente nuevo** con un nombre que lo identifique (por ejemplo `movil-ana`).
+3. Pulsa el icono del **QR**.
+4. En la app WireGuard: **+** → **Escanear código QR** y escanéalo.
+5. Activa el túnel.
 
-### Revocar un dispositivo (borrar acceso)
+### Añadir un ordenador
 
-1. Entra en el panel web
-2. Busca el cliente (dispositivo)
-3. Haz clic en el icono de papelera o "Eliminar"
-4. Confirma
+1. Instala WireGuard desde [wireguard.com/install](https://www.wireguard.com/install/).
+2. En el panel, crea el cliente y **descarga** su archivo `.conf`.
+3. En WireGuard: **Importar túnel desde archivo** y elige el `.conf`.
+4. Activa el túnel.
 
-El dispositivo **perderá acceso inmediatamente** a la VPN. Si lo intentas reconectar con el perfil anterior, la VPN rechazará la conexión.
+### Una tele
+
+Solo las teles con **Android TV / Google TV** tienen app de WireGuard. Instálala desde Google Play e importa el QR o el `.conf` (por ejemplo, desde un USB).
+
+### Ver, desactivar o quitar dispositivos
+
+- En la lista del panel ves cada dispositivo, cuándo se conectó por última vez y el tráfico.
+- **Desactivar** corta el acceso sin borrar el perfil (para volver a activarlo después).
+- **Borrar** lo elimina: ese perfil deja de funcionar para siempre.
+
+Si pierdes un móvil, **desactívalo o bórralo** en cuanto puedas.
 
 ### Cambiar la contraseña del panel
 
-1. Entra en el panel web
-2. En la sección de "Administración" o "Admin", busca "Cambiar contraseña"
-3. Introduce la contraseña actual y la nueva
-4. Guarda
+Cámbiala desde el propio panel (en el menú de tu cuenta). El valor de `.env` no se actualiza solo y editarlo no cambia la contraseña. Si usas ARIA, pon la nueva también en su `VPN_PASSWORD`.
 
-La contraseña en `.env` no se actualiza automáticamente (si editada `.env` manualmente, ejecuta `docker compose up -d`).
+### Apagar la VPN un rato
 
-### Ver quién está conectado
+```bash
+docker compose --profile ddns down   # apagar (también DuckDNS, si lo usas)
+./install.sh                          # volver a encenderla
+```
 
-En el panel web:
-
-1. Entra en "Pares" o "Peers"
-2. Verás una lista de dispositivos
-3. "Conectado hace": cuándo fue el último handshake (si es reciente, está conectado ahora)
-4. "Datos enviados/recibidos": tráfico del dispositivo
-
-### Revisar logs
+### Ver los registros
 
 ```bash
 docker compose logs -f wg-easy
 ```
 
-Muestra eventos de conexión/desconexión de dispositivos.
+## Con ARIA
 
-## DNS dinámico (si tu IP pública cambia)
-
-Por defecto, HEIMDALL usa tu **IP pública actual** (consultando https://api.ipify.org). Si tu ISP cambia tu IP frecuentemente (cada día, cada semana), los clientes VPN no podrán reconectar (el servidor habrá desaparecido de internet).
-
-**Solución: DuckDNS** (gratuito)
-
-### Configurar DuckDNS
-
-1. Entra en https://www.duckdns.org
-2. Crea una cuenta (con Gmail, GitHub, etc.)
-3. Haz clic en "Crear un subdominio" (ej. `micasa.duckdns.org`)
-4. Copia el **token** (cadena larga de caracteres)
-5. En la Raspberry, edita `.env`:
-   ```
-   DUCKDNS_SUBDOMAIN=micasa
-   DUCKDNS_TOKEN=abc123def456ghi789
-   ```
-6. Ejecuta `./install.sh` de nuevo
-7. Comprueba que `WG_HOST` en `.env` ahora es `micasa.duckdns.org`
-8. En el panel web, ve a "Administración" → "General" → "Endpoint" y confirma que dice `micasa.duckdns.org`
-
-Ahora, aunque tu ISP cambie tu IP pública, `micasa.duckdns.org` siempre apuntará a ti.
-
-## Actualizar
+[ARIA](https://github.com/BertMarti/ARIA) trae HEIMDALL como **aplicación integrada**. Si los dos están en la misma carpeta (`~/homelab/HEIMDALL` y `~/homelab/ARIA`), el instalador de ARIA lee el usuario y la contraseña del panel y se conecta solo. Si no, pon en el `.env` de ARIA:
 
 ```bash
-cd ~/homelab/HEIMDALL   # o donde lo clonaras
-./update.sh
+VPN_URL=https://192.168.1.50:51843
+VPN_USER=admin
+VPN_PASSWORD=la-contraseña-del-panel
 ```
 
-`update.sh` hace primero una copia de seguridad, descarga los cambios del repositorio y las imágenes nuevas, y vuelve a aplicar la instalación. Tus dispositivos VPN siguen funcionando: la configuración está en `data/wireguard/`.
+y aplica con `docker compose up -d` en la carpeta de ARIA.
 
-## Copia de seguridad y restauración
+Con ARIA tienes:
+
+- Un **mosaico en Inicio** con su estado y «Copiar contraseña», y la acción rápida **Añadir dispositivo a la VPN**.
+- La tarjeta **HEIMDALL** en el Centro de control: dispositivos, cuáles están conectados, **Añadir dispositivo** (con QR y `.conf`), **Activar/Desactivar** y **Eliminar** (con confirmación).
+- **Chat**: «¿qué dispositivos hay en la VPN?», «añade un dispositivo a la VPN llamado portatil-lucia», «desactiva movil-ana». Borrar solo se puede desde la interfaz.
+- **Telegram**: `/vpn` y `/nuevovpn <nombre>` (te manda el QR y el `.conf`).
+- **Avisos** si HEIMDALL se cae y, si lo activas, cuando un dispositivo se conecta.
+- El **resumen de buenos días** incluye qué dispositivos se conectaron.
+- Con un dominio en Cloudflare, el panel en `https://heimdall.tu-dominio.com` (protegido con Cloudflare Access).
+
+## Copias, restauración y actualización
+
+### Copia de seguridad
 
 ```bash
 ./backup.sh
 ```
 
-Crea `backups/heimdall-AAAAMMDD-HHMM.tar.gz` con tu `.env`, la base de datos de wg-easy (claves del servidor y de todos los dispositivos) y la autoridad de certificados del panel. **Contiene claves privadas: guárdala en un sitio seguro**. Se conservan las 7 más recientes. **Copia ese archivo fuera de la Raspberry** (a tu PC o a un USB): si formateas, es lo único que necesitas.
+Crea `backups/heimdall-AAAAMMDD-HHMM.tar.gz` con tu `.env`, la base de datos de wg-easy (las claves del servidor y de todos los dispositivos) y el certificado del panel. Guarda las 7 más recientes. **Contiene claves privadas**: cópiala a un sitio seguro fuera de la máquina. Si usas ARIA, su script `sistema/instalar-copias.sh` hace una copia cifrada cada día.
 
-Para restaurar (por ejemplo, en una Raspberry recién formateada):
+### Restaurar
+
+Por ejemplo, en una máquina recién formateada (con la misma IP en casa):
 
 ```bash
 git clone https://github.com/BertMarti/HEIMDALL.git && cd HEIMDALL
@@ -196,139 +236,56 @@ mkdir -p backups && cp /ruta/a/heimdall-AAAAMMDD-HHMM.tar.gz backups/
 ./restore.sh backups/heimdall-AAAAMMDD-HHMM.tar.gz
 ```
 
-`restore.sh` pide confirmación, recupera la configuración y arranca todo con `install.sh`.
+Pide confirmación, sustituye la configuración y arranca todo. Tus dispositivos siguen funcionando sin volver a escanear nada.
+
+### Actualizar
+
+```bash
+cd ~/homelab/HEIMDALL
+./update.sh
+```
+
+Hace una copia, descarga el código y las imágenes nuevas y vuelve a instalar. Los dispositivos se conservan (están en `data/wireguard/`).
 
 ## Desinstalar
 
-Sin borrar datos (puedes reinstalar sin perder perfiles VPN):
 ```bash
-./uninstall.sh
+./uninstall.sh            # para y quita los contenedores; conserva data/ y .env
+./uninstall.sh --purge    # borra también las claves, los dispositivos y .env
 ```
 
-Con purga completa (borra clientes y .env):
-```bash
-./uninstall.sh --purge
-```
+Con `--purge`, todos los perfiles de tus dispositivos dejan de funcionar. Quita también la regla del puerto 51820 en el router.
 
-**Aviso:** si haces `--purge`, todos los clientes VPN dejarán de funcionar (sus perfiles quedarán inválidos).
+## Problemas frecuentes
 
-## Solución de problemas
+| Problema | Qué hacer |
+|---|---|
+| Desde fuera de casa no conecta | 1) Comprueba la regla del router (UDP 51820 → `192.168.1.50`). 2) Prueba con el móvil en datos, no en tu Wi-Fi. 3) Mira en la app WireGuard si hay «último *handshake*»: si nunca aparece, el tráfico no llega. |
+| ¿Tengo CG-NAT? | Compara la IP «WAN» o «Internet» que muestra tu router con la de [api.ipify.org](https://api.ipify.org). Si son distintas (o la del router empieza por `100.64.`–`100.127.`), tu operador usa CG-NAT: pídele una IP pública. DuckDNS no lo soluciona. |
+| Conecta pero no navega | Revisa el DNS de la VPN. Si es SHIELD-DNS, comprueba que está en marcha (`docker ps`). |
+| Dejó de funcionar tras unos días | Probablemente cambió tu IP pública. Usa [DNS dinámico](#si-tu-ip-pública-cambia-dns-dinámico). |
+| Cambié `WG_HOST` en `.env` y no cambia nada | Es lo esperado: solo vale en el primer arranque. Cámbialo en el panel. |
+| El panel no carga (error 502) | `docker compose ps` y `docker compose logs caddy wg-easy`. Prueba `docker compose restart`. |
+| He olvidado la contraseña del panel | Si nunca la cambiaste en el panel, está en `.env` (`grep WG_ADMIN_PASSWORD .env`). |
+| Desde la VPN no veo `aria.lan` | El DNS de la VPN debe ser SHIELD-DNS. |
 
-### La VPN no funciona desde fuera de casa
+## Limitaciones
 
-**Comprobación 1: ¿está el puerto 51820 UDP reenviado en el router?**
-```bash
-# Desde fuera de casa (en 4G/5G con otro ISP), en tu PC:
-nc -u -zv <TU-IP-PUBLICA> 51820
-```
+- **Solo IPv4**: la VPN tiene IPv6 desactivado.
+- **Teles**: solo Android TV / Google TV tienen app de WireGuard.
+- **Streaming**: salir por tu casa no garantiza que una plataforma te trate como «en casa»; usan más señales que la IP.
+- En SHIELD-DNS, las consultas que llegan por la VPN aparecen con la IP interna de Docker, no con la del dispositivo.
 
-Si dice `succeeded` o `open`, el puerto está abierto. Si `refused` o `timeout`, el reenvío no está activo.
+## Puertos y contenedores
 
-**Comprobación 2: ¿tienes CG-NAT (Carrier Grade NAT)?**
-Compara:
-- IP en el router WAN: (accede a la configuración del router y mira "Estado")
-- IP pública real: https://api.ipify.org
+| Contenedor | Puerto | Protocolo | Uso |
+|---|---|---|---|
+| `heimdall-wg` | 51820 | UDP | Conexiones VPN (ábrelo en el router) |
+| `heimdall-caddy` | 51843 | TCP | Panel HTTPS (solo en casa) |
+| `heimdall-duckdns` | — | — | DNS dinámico (solo si lo configuras) |
 
-Si son diferentes, tu ISP usa CG-NAT. Tendrás que solicitar una IP pública dedicada o usar DuckDNS.
-
-**Comprobación 3: ¿está HEIMDALL corriendo?**
-```bash
-docker compose ps
-```
-
-Debe mostrar `wg-easy` y `caddy` con estado `Up`.
-
-### El panel web no carga (error 502)
-
-```bash
-docker compose restart
-```
-
-Si sigue sin funcionar:
-```bash
-docker compose logs caddy
-docker compose logs wg-easy
-```
-
-Busca mensajes de `ERROR`.
-
-### Cambié WG_HOST en .env pero el panel no lo refleja
-
-Esto es **normal y esperado**. `WG_HOST` solo se aplica en el primer arranque (por si tienes datos existentes).
-
-Para cambiar el endpoint públicamente:
-1. En el panel: "Administración" → "General" → "Endpoint"
-2. Cambia manualmente el campo
-3. Guarda
-
-O si quieres empezar de cero:
-```bash
-./uninstall.sh --purge
-rm -rf data/
-./install.sh
-```
-
-### Quiero deshabilitar la VPN temporalmente
-
-```bash
-docker compose down
-```
-
-Los clientes verán que la VPN está desconectada. Para volver a arrancar:
-```bash
-docker compose up -d
-```
-
-### El TV no puede conectar (no tiene WireGuard)
-
-**Lamentablemente**, la mayoría de TVs normales no soportan WireGuard. Solo TVs con Android TV o Google TV lo permiten.
-
-**Alternativas:**
-- Conecta un Chromecast con Android TV / Google TV a la TV
-- Usa un router con WireGuard (algunos modelos de TP-Link o ASUS lo soportan)
-- Instala un cliente WireGuard en una Raspberry Pi adicional y conéctalo por HDMI
-
-## Puertos
-
-| Servicio | Puerto | Protocolo | Uso |
-|----------|--------|-----------|-----|
-| WireGuard | 51820 | UDP | Conexiones VPN (se reenvía en router) |
-| Panel HTTPS | 51843 | TCP | Gestión de clientes (en la LAN) |
-
-## Características verificadas (2026-10-06)
-
-- ✓ Instalación idempotente: el script funciona varias veces
-- ✓ API WireGuard: aceptación de HTTP Basic auth
-- ✓ Integración DNS: detecta automáticamente SHIELD-DNS
-- ✓ Túneles funcionales: handshake confirmado, tráfico de datos
-- ✓ Certificados TLS: Caddy genera CA interna automáticamente
-- ✓ Múltiples clientes: pruebas con varios perfiles simultáneos
-
-## Limitaciones conocidas
-
-### 1. Servicios de streaming detectan que estás en casa
-Netflix, Disney+, Amazon Prime, etc., usan varios señales para determinar si accedes desde "tu hogar":
-- **IP pública:** la VPN te hace salir por tu casa
-- **Pero también:** geolocalización GPS, velocidad de red, historial de reproducción, dispositivo conocido, etc.
-
-**Impacto:** la VPN ayuda, pero no garantiza acceso a contenido regional. Algunos servicios pueden seguir detectando que no estás en casa.
-
-**Solución:** no hay una solución perfecta. Algunos usuarios reportan que funciona; otros que no. Depende del servicio y sus criterios.
-
-### 2. TV antiguos / Smart TV no soportan WireGuard
-Solo Android TV y Google TV tienen apps WireGuard. LG webOS, Samsung Tizen, etc., no las soportan.
-
-**Impacto:** no puedes conectar un TV Samsung/LG directamente a la VPN.
-
-**Solución:** usa un router con WireGuard integrado, o una Raspberry Pi adicional como puerta de enlace.
-
-### 3. IPv6 deshabilitado en la VPN
-`DISABLE_IPV6=true` en docker-compose.yml.
-
-**Motivo:** la mayoría de redes domésticas usan solo IPv4. IPv6 requería configuración extra.
-
-**Impacto:** dispositivos en la VPN usarán solo IPv4. Sitios solo-IPv6 no funcionarán (raro en 2026).
+Documentación para quien quiera modificar el proyecto: [CLAUDE.md](CLAUDE.md), [AGENTS.md](AGENTS.md), [SKILLS.md](SKILLS.md) y [MEMORY.md](MEMORY.md).
 
 ## Licencia
 
-MIT – 2026, BertMarti
+MIT. Consulta [LICENSE](LICENSE).
