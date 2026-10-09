@@ -360,7 +360,9 @@ Con ARIA tienes:
 - 💬 **Chat**: «¿qué dispositivos hay en la VPN?», «añade un dispositivo a la VPN llamado portatil-lucia», «desactiva movil-ana». Borrar solo se puede desde la interfaz.
 - ✈️ **Telegram**: `/vpn` y `/nuevovpn <nombre>` (te manda el QR y el `.conf`).
 - 🔔 **Avisos** si HEIMDALL se cae y, si lo activas, cuando un dispositivo se conecta.
-- ☀️ El **resumen de buenos días** incluye qué dispositivos se conectaron.
+- ⏳ **Accesos temporales**: crea un dispositivo con fecha de caducidad (para una visita o un viaje): a esa hora deja de funcionar solo.
+- 🌍 **Aviso de ubicación nueva**: si un dispositivo conecta desde un país u operador que no había usado, el administrador recibe un aviso. Solo se consulta la IP pública (las privadas se ignoran) y la respuesta se guarda siete días.
+- 📰 El **resumen diario** (Inicio, HUD y Telegram) dice cuántos dispositivos están conectados y avisa si HEIMDALL no responde; el **informe semanal** resume el uso.
 - 🌍 Con un dominio en Cloudflare, el panel en `https://heimdall.tu-dominio.com` (protegido con Cloudflare Access).
 
 </td>
