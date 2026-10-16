@@ -26,10 +26,10 @@
 </p>
 
 <p align="center">
-  <b><a href="#-instalación">🚀 Instalar</a></b>&nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="#-abre-el-puerto-en-el-router">🚪 Abrir el puerto</a>&nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="#-uso-diario">📱 Añadir un móvil</a>&nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="#-problemas-frecuentes">🆘 Problemas</a>
+  <b><a href="#instalación">🚀 Instalar</a></b>&nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#abre-el-puerto-en-el-router">🚪 Abrir el puerto</a>&nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#uso-diario">📱 Añadir un móvil</a>&nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#problemas-frecuentes">🆘 Problemas</a>
 </p>
 
 **Tu propia VPN para entrar en casa desde cualquier sitio.** HEIMDALL convierte una Raspberry Pi o un PC con Linux en un servidor [WireGuard](https://www.wireguard.com) con un panel web sencillo para añadir dispositivos con un código QR.
@@ -37,6 +37,8 @@
 Con la VPN conectada, tu móvil o portátil se comporta como si estuviera en casa: puedes abrir tus aplicaciones de casa, usar tu conexión en una Wi-Fi pública con más seguridad y, si tienes [SHIELD-DNS](https://github.com/BertMarti/SHIELD-DNS), llevarte el bloqueo de anuncios a todas partes.
 
 Funciona solo o como aplicación integrada en [ARIA](https://github.com/BertMarti/ARIA), el asistente de IA que gestiona tus aplicaciones de casa.
+
+<p align="left"><img alt="Ping: «¡Eh, mira! Yo vigilo la puerta de casa»" src="docs/img/ping/ping-hola.svg"></p>
 
 <p align="center">
   <img alt="Panel de wg-easy de HEIMDALL con la lista de dispositivos" src="docs/img/captura-panel-wgeasy.png" width="80%">
@@ -48,22 +50,23 @@ Funciona solo o como aplicación integrada en [ARIA](https://github.com/BertMart
 
 ## 📑 Índice
 
-- [🔍 Cómo funciona](#-cómo-funciona)
-- [✨ Qué incluye](#-qué-incluye)
-- [📋 Requisitos](#-requisitos)
-- [🚀 Instalación](#-instalación)
-- [🚪 Abre el puerto en el router](#-abre-el-puerto-en-el-router)
-- [⚙️ Configuración](#️-configuración)
-- [🌍 Si tu IP pública cambia (DNS dinámico)](#-si-tu-ip-pública-cambia-dns-dinámico)
-- [📱 Uso diario](#-uso-diario)
-- [🤖 Con ARIA](#-con-aria)
-- [💾 Copias, restauración y actualización](#-copias-restauración-y-actualización)
-- [🗑️ Desinstalar](#️-desinstalar)
-- [🆘 Problemas frecuentes](#-problemas-frecuentes)
-- [⚠️ Limitaciones](#️-limitaciones)
-- [🔌 Puertos y contenedores](#-puertos-y-contenedores)
-- [🌐 El ecosistema ARIA](#-el-ecosistema-aria)
-- [📄 Licencia](#-licencia)
+- [🔍 Cómo funciona](#cómo-funciona)
+- [✨ Qué incluye](#qué-incluye)
+- [🧚 Ping](#ping)
+- [📋 Requisitos](#requisitos)
+- [🚀 Instalación](#instalación)
+- [🚪 Abre el puerto en el router](#abre-el-puerto-en-el-router)
+- [⚙️ Configuración](#configuración)
+- [🌍 Si tu IP pública cambia (DNS dinámico)](#si-tu-ip-pública-cambia-dns-dinámico)
+- [📱 Uso diario](#uso-diario)
+- [🤖 Con ARIA](#con-aria)
+- [💾 Copias, restauración y actualización](#copias-restauración-y-actualización)
+- [🗑️ Desinstalar](#desinstalar)
+- [🆘 Problemas frecuentes](#problemas-frecuentes)
+- [⚠️ Limitaciones](#limitaciones)
+- [🔌 Puertos y contenedores](#puertos-y-contenedores)
+- [🌐 El ecosistema ARIA](#el-ecosistema-aria)
+- [📄 Licencia](#licencia)
 
 ## 🔍 Cómo funciona
 
@@ -107,6 +110,12 @@ flowchart LR
 
 <p align="right"><a href="#readme-top">⬆️ Volver arriba</a></p>
 
+<a id="ping"></a>
+
+## 🧚 Ping
+
+Ping es el hada de luz de ARIA que aquí atrapa anuncios y vigila la puerta de HEIMDALL. Sus mensajes son pequeñas señales traviesas para saber qué pasa con la VPN.
+
 ## 📋 Requisitos
 
 | | Necesitas |
@@ -115,12 +124,14 @@ flowchart LR
 | 🐳 Software | Docker con `docker compose` v2. Si falta, el instalador lo instala con el script oficial. |
 | 📍 IP fija | Una **IP fija** para la máquina dentro de casa (resérvala en el DHCP del router). |
 | 📶 Router | Acceso al **router** para abrir un puerto (UDP 51820). |
-| 🌍 IP pública | Una **IP pública** en tu conexión. Si tu operador usa CG-NAT, no podrás recibir conexiones (ver [problemas frecuentes](#-problemas-frecuentes)). |
+| 🌍 IP pública | Una **IP pública** en tu conexión. Si tu operador usa CG-NAT, no podrás recibir conexiones (ver [problemas frecuentes](#problemas-frecuentes)). |
 
 > [!WARNING]
 > **Windows**: no soportado. WireGuard dentro de WSL2/Docker Desktop no recibe conexiones de fuera de forma fiable.
 
 ## 🚀 Instalación
+
+<p align="right"><img alt="Ping: «La puerta vigila: UDP 51820 sigue en su sitio»" src="docs/img/ping/ping-puerta.svg"></p>
 
 ```mermaid
 flowchart LR
@@ -339,6 +350,8 @@ docker compose logs -f wg-easy
 
 ## 🤖 Con ARIA
 
+<p align="left"><img alt="Ping: «ARIA ya sabe quién entra en casa»" src="docs/img/ping/ping-aria.svg"></p>
+
 [ARIA](https://github.com/BertMarti/ARIA) trae HEIMDALL como **aplicación integrada**. Si los dos están en la misma carpeta (`~/homelab/HEIMDALL` y `~/homelab/ARIA`), el instalador de ARIA lee el usuario y la contraseña del panel y se conecta solo. Si no, pon en el `.env` de ARIA:
 
 ```bash
@@ -427,6 +440,8 @@ Hace una copia, descarga el código y las imágenes nuevas y vuelve a instalar. 
 
 ## 🆘 Problemas frecuentes
 
+<p align="right"><img alt="Ping: «¡Alerta! La VPN no ve ni un handshake»" src="docs/img/ping/ping-alerta.svg"></p>
+
 <details>
 <summary><b>Desde fuera de casa no conecta</b></summary>
 <br>
@@ -454,7 +469,7 @@ Revisa el DNS de la VPN. Si es SHIELD-DNS, comprueba que está en marcha (`docke
 <summary><b>Dejó de funcionar tras unos días</b></summary>
 <br>
 
-Probablemente cambió tu IP pública. Usa [DNS dinámico](#-si-tu-ip-pública-cambia-dns-dinámico).
+Probablemente cambió tu IP pública. Usa [DNS dinámico](#si-tu-ip-pública-cambia-dns-dinámico).
 </details>
 
 <details>
@@ -515,3 +530,5 @@ Documentación para quien quiera modificar el proyecto: [CLAUDE.md](CLAUDE.md), 
 MIT. Consulta [LICENSE](LICENSE).
 
 <p align="right"><a href="#readme-top">⬆️ Volver arriba</a></p>
+
+<p align="left"><img alt="Ping: «¿Otro móvil? Tráeme ese QR y no hagas ruido»" src="docs/img/ping/ping-qr.svg"></p>
