@@ -73,6 +73,8 @@ Funciona solo o como aplicación integrada en [ARIA](https://github.com/BertMart
 - [🌐 El ecosistema ARIA](#el-ecosistema-aria)
 - [📄 Licencia](#licencia)
 
+<a id="cómo-funciona"></a>
+
 ## 🔍 Cómo funciona
 
 ```mermaid
@@ -94,6 +96,8 @@ flowchart LR
 
 </details>
 
+<a id="qué-incluye"></a>
+
 ## ✨ Qué incluye
 
 | | Pieza | Qué hace |
@@ -112,6 +116,8 @@ flowchart LR
 
 Ping es el hada de luz de ARIA; aquí vigila la puerta de HEIMDALL. Sus mensajes son pequeñas señales traviesas para saber qué pasa con la VPN.
 
+<a id="requisitos"></a>
+
 ## 📋 Requisitos
 
 | | Necesitas |
@@ -124,6 +130,8 @@ Ping es el hada de luz de ARIA; aquí vigila la puerta de HEIMDALL. Sus mensajes
 
 > [!WARNING]
 > **Windows**: no soportado. WireGuard dentro de WSL2/Docker Desktop no recibe conexiones de fuera de forma fiable.
+
+<a id="instalación"></a>
 
 ## 🚀 Instalación
 
@@ -183,6 +191,8 @@ cd HEIMDALL
 
 <p align="right"><a href="#readme-top">⬆️ Volver arriba</a></p>
 
+<a id="abre-el-puerto-en-el-router"></a>
+
 ## 🚪 Abre el puerto en el router
 
 Sin este paso la VPN solo funciona dentro de tu propia Wi-Fi, que no sirve de mucho. Cada router es distinto, pero los pasos son parecidos:
@@ -205,9 +215,13 @@ Sin este paso la VPN solo funciona dentro de tu propia Wi-Fi, que no sirve de mu
 
 > ✅ **Comprobación:** con el móvil en datos (no en tu Wi-Fi) y el túnel activo, la app WireGuard muestra un «último *handshake*» reciente.
 
+<a id="configuración"></a>
+
 ## ⚙️ Configuración
 
 Todo se guarda en `.env`; lo rellena `install.sh`. Detalle en la [guía técnica](docs/DESARROLLO.md).
+
+<a id="si-tu-ip-pública-cambia-dns-dinámico"></a>
 
 ## 🌍 Si tu IP pública cambia (DNS dinámico)
 
@@ -244,6 +258,8 @@ El script `cloudflare/configurar.sh` de ARIA arranca `cloudflare-ddns`, que mant
 </details>
 
 <p align="right"><a href="#readme-top">⬆️ Volver arriba</a></p>
+
+<a id="uso-diario"></a>
 
 ## 📱 Uso diario
 
@@ -294,6 +310,8 @@ Cámbiala desde el propio panel (en el menú de tu cuenta). El valor de `.env` n
 
 </details>
 
+<a id="con-aria"></a>
+
 ## 🤖 Con ARIA
 
 <p align="left"><img alt="Ping: «ARIA ya sabe quién entra en casa»" src="docs/img/ping/ping-aria.svg"></p>
@@ -330,6 +348,8 @@ Con ARIA tienes:
 </table>
 
 <p align="right"><a href="#readme-top">⬆️ Volver arriba</a></p>
+
+<a id="copias-restauración-y-actualización"></a>
 
 ## 💾 Copias, restauración y actualización
 
@@ -374,6 +394,8 @@ Hace una copia, descarga el código y las imágenes nuevas y vuelve a instalar. 
 
 </details>
 
+<a id="desinstalar"></a>
+
 ## 🗑️ Desinstalar
 
 ```bash
@@ -383,6 +405,8 @@ Hace una copia, descarga el código y las imágenes nuevas y vuelve a instalar. 
 
 > [!WARNING]
 > Con `--purge`, todos los perfiles de tus dispositivos dejan de funcionar. Quita también la regla del puerto 51820 en el router.
+
+<a id="problemas-frecuentes"></a>
 
 ## 🆘 Problemas frecuentes
 
@@ -450,6 +474,8 @@ docker compose exec -it wg-easy cli db:admin:reset
 El DNS de la VPN debe ser SHIELD-DNS.
 </details>
 
+<a id="limitaciones"></a>
+
 ## ⚠️ Limitaciones
 
 - **Solo IPv4**: la VPN tiene IPv6 desactivado.
@@ -461,6 +487,8 @@ Solo hay que abrir el puerto UDP 51820 en el router; el panel 51843 se queda en 
 
 🛠️ ¿Quieres modificar HEIMDALL? Mira la [guía técnica](docs/DESARROLLO.md). Para avisar de un fallo de seguridad: [SECURITY.md](SECURITY.md).
 
+<a id="el-ecosistema-aria"></a>
+
 ## 🌐 El ecosistema ARIA
 
 | | Proyecto | Qué hace | Puertos |
@@ -468,6 +496,8 @@ Solo hay que abrir el puerto UDP 51820 en el router; el panel 51843 se queda en 
 | 🤖 | [ARIA](https://github.com/BertMarti/ARIA) | Asistente de IA y panel central de la casa | 80, 443 |
 | 🛡️ | [SHIELD-DNS](https://github.com/BertMarti/SHIELD-DNS) | Bloqueador de anuncios para toda la casa (Pi-hole v6 + Unbound) | 53, 8080, 8443 |
 | 🔐 | **HEIMDALL** (este repositorio) | VPN WireGuard para entrar en casa desde fuera (wg-easy + Caddy) | 51820/udp, 51843 |
+
+<a id="licencia"></a>
 
 ## 📄 Licencia
 
