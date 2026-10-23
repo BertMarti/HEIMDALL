@@ -1,0 +1,16 @@
+# Configuración de gitleaks para HEIMDALL.
+# Usa las reglas por defecto y solo permite marcadores de EJEMPLO concretos que ya están en el historial
+# de la documentación (revisados a mano el 24/10/2026: no son credenciales reales).
+title = "gitleaks HEIMDALL"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Marcadores de ejemplo en la documentación antigua (curl -u admin:PASSWORD y token DuckDNS de ejemplo)"
+targetRules = ["curl-auth-user", "generic-api-key"]
+regexTarget = "secret"
+regexes = [
+  '''^admin:(PASS|PASSWORD|NUEVA_PASSWORD)$''',
+  '''^abc123def456ghi789(jkl012)?$''',
+]

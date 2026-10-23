@@ -1,0 +1,25 @@
+# Actualizaciones semanales y agrupadas (una PR por tipo) de imágenes Docker y GitHub Actions.
+version: 2
+updates:
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Europe/Madrid"
+    groups:
+      imagenes-docker:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps(docker)"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Europe/Madrid"
+    groups:
+      acciones:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps(actions)"
