@@ -19,5 +19,6 @@ cp .env "$TMP/.env"
 ARCHIVO="backups/heimdall-$(date +%Y%m%d-%H%M).tar.gz"
 sudo tar -czf "$ARCHIVO" -C "$TMP" .env data
 sudo chown "$(id -u):$(id -g)" "$ARCHIVO"; chmod 600 "$ARCHIVO"
+# shellcheck disable=SC2012  # nombres generados por este script (sin espacios)
 ls -1t backups/heimdall-*.tar.gz | tail -n +8 | xargs -r rm -f
 echo "Copia creada: $(pwd)/$ARCHIVO ($(du -h "$ARCHIVO" | cut -f1))"

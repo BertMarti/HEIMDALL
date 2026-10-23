@@ -30,7 +30,10 @@ sudo modprobe wireguard 2>/dev/null || aviso "No se pudo cargar el módulo wireg
 
 # 3. .env
 [ -f .env ] || { cp .env.example .env; ok "Creado .env"; }
-set -a; . ./.env; set +a
+set -a
+# shellcheck source=/dev/null
+. ./.env
+set +a
 
 LAN_IP_DET="$(hostname -I | awk '{print $1}')"
 set_env LAN_IP "$LAN_IP_DET"
@@ -55,7 +58,10 @@ if [ -z "${WG_DNS:-}" ]; then
   fi
 fi
 chmod 600 .env
-set -a; . ./.env; set +a
+set -a
+# shellcheck source=/dev/null
+. ./.env
+set +a
 
 if [ -d data/wireguard ] && [ -n "$(ls -A data/wireguard 2>/dev/null)" ]; then
   aviso "HEIMDALL ya estaba configurado: los cambios de WG_* en .env no se aplican (usa la web)."
@@ -63,13 +69,14 @@ fi
 mkdir -p data/wireguard data/caddy
 
 # 4. Arranque
-PERFILES=""
-if [ -n "${DUCKDNS_SUBDOMAIN:-}" ] && [ -n "${DUCKDNS_TOKEN:-}" ]; then PERFILES="--profile ddns"; fi
+PERFILES=()
+if [ -n "${DUCKDNS_SUBDOMAIN:-}" ] && [ -n "${DUCKDNS_TOKEN:-}" ]; then PERFILES=(--profile ddns); fi
 info "Arrancando contenedores..."
-$DOCKER compose $PERFILES up -d
+$DOCKER compose "${PERFILES[@]}" up -d
 
 info "Esperando al panel web..."
-for i in $(seq 1 40); do
+code=""
+for _ in $(seq 1 40); do
   code="$(curl -sk -o /dev/null -w '%{http_code}' "https://${LAN_IP}:${WEB_PORT:-51843}/" || true)"
   [[ "$code" =~ ^(200|302)$ ]] && break
   sleep 3
