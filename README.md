@@ -13,6 +13,8 @@
 </p>
 
 <p align="center">
+  <a href="https://bertmarti.github.io/HEIMDALL/"><img alt="Web" src="https://img.shields.io/badge/web-GitHub%20Pages-38d6ff?style=flat-square"></a>
+  <a href="https://github.com/BertMarti/HEIMDALL/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/BertMarti/HEIMDALL/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-f5b84b?style=flat-square"></a>
   <img alt="100 % autoalojado" src="https://img.shields.io/badge/100%20%25-autoalojado-34d399?style=flat-square">
   <img alt="Gratis" src="https://img.shields.io/badge/precio-gratis-7c8cff?style=flat-square">
@@ -33,6 +35,10 @@
 </p>
 
 **Tu propia VPN para entrar en casa desde cualquier sitio.** HEIMDALL convierte una Raspberry Pi o un PC con Linux en un servidor [WireGuard](https://www.wireguard.com) con un panel web sencillo para añadir dispositivos con un código QR.
+
+<p align="center"><a href="https://bertmarti.github.io/HEIMDALL/"><b>🌐 Ver la web de HEIMDALL: instalación paso a paso con capturas</b></a></p>
+
+<p align="right"><img src="docs/img/ping/ping-web.svg" alt="Ping: «¿Prefieres verlo bonito? Te espero en la web»"></p>
 
 Con la VPN conectada, tu móvil o portátil se comporta como si estuviera en casa: puedes abrir tus aplicaciones de casa, usar tu conexión en una Wi-Fi pública con más seguridad y, si tienes [SHIELD-DNS](https://github.com/BertMarti/SHIELD-DNS), llevarte el bloqueo de anuncios a todas partes.
 
@@ -64,7 +70,6 @@ Funciona solo o como aplicación integrada en [ARIA](https://github.com/BertMart
 - [🗑️ Desinstalar](#desinstalar)
 - [🆘 Problemas frecuentes](#problemas-frecuentes)
 - [⚠️ Limitaciones](#limitaciones)
-- [🔌 Puertos y contenedores](#puertos-y-contenedores)
 - [🌐 El ecosistema ARIA](#el-ecosistema-aria)
 - [📄 Licencia](#licencia)
 
@@ -89,15 +94,6 @@ flowchart LR
 
 </details>
 
-**¿Qué DNS usan los dispositivos conectados?** `install.sh` lo decide la primera vez:
-
-```mermaid
-flowchart LR
-    A["install.sh"] --> Q{"¿SHIELD-DNS<br/>está en marcha?"}
-    Q -- "Sí" --> S["WG_DNS = IP de tu máquina<br/>🛡️ bloqueo de anuncios"]
-    Q -- "No" --> C["WG_DNS = 1.1.1.1"]
-```
-
 ## ✨ Qué incluye
 
 | | Pieza | Qué hace |
@@ -114,7 +110,7 @@ flowchart LR
 
 ## 🧚 Ping
 
-Ping es el hada de luz de ARIA que aquí atrapa anuncios y vigila la puerta de HEIMDALL. Sus mensajes son pequeñas señales traviesas para saber qué pasa con la VPN.
+Ping es el hada de luz de ARIA; aquí vigila la puerta de HEIMDALL. Sus mensajes son pequeñas señales traviesas para saber qué pasa con la VPN.
 
 ## 📋 Requisitos
 
@@ -171,21 +167,6 @@ cd HEIMDALL
 > curl -fsSL https://raw.githubusercontent.com/BertMarti/ARIA/main/instalar-todo.sh | bash
 > ```
 
-<details>
-<summary><b>🔧 Qué hace <code>install.sh</code></b></summary>
-<br>
-
-1. Instala Docker si no lo tienes y carga el módulo `wireguard` del kernel (si ya está integrado, solo avisa).
-2. Crea `.env` y rellena lo que falte:
-   - `LAN_IP` y `PI_HOSTNAME`: la IP y el nombre de la máquina.
-   - `WG_ADMIN_PASSWORD`: una contraseña aleatoria para el panel.
-   - `WG_HOST`: tu subdominio de DuckDNS (si lo configuraste) o tu IP pública actual.
-   - `WG_DNS`: la IP de la máquina si SHIELD-DNS está en marcha; si no, `1.1.1.1`.
-3. Arranca los contenedores (y DuckDNS, si lo configuraste) y espera a que el panel responda.
-4. Muestra la dirección del panel, el servidor y el recordatorio de abrir el puerto.
-
-</details>
-
 > [!IMPORTANT]
 > Puedes repetir `./install.sh` cuando quieras, pero `WG_ADMIN_USER`, `WG_ADMIN_PASSWORD`, `WG_HOST`, `WG_PORT` y `WG_DNS` solo se aplican la **primera vez** que arranca. Después se cambian desde el panel web.
 
@@ -226,21 +207,7 @@ Sin este paso la VPN solo funciona dentro de tu propia Wi-Fi, que no sirve de mu
 
 ## ⚙️ Configuración
 
-Todo está en `.env` (se crea a partir de [`.env.example`](.env.example)).
-
-| Variable | Por defecto | Para qué |
-|---|---|---|
-| `TZ` | `Europe/Madrid` | Zona horaria |
-| `WG_ADMIN_USER` | `admin` | Usuario del panel (solo primer arranque) |
-| `WG_ADMIN_PASSWORD` | aleatoria (la genera `install.sh`) | Contraseña del panel (solo primer arranque) |
-| `WG_HOST` | tu subdominio DuckDNS o tu IP pública | Dirección a la que se conectan los dispositivos (solo primer arranque) |
-| `WG_PORT` | `51820` | Puerto UDP de WireGuard (solo primer arranque) |
-| `WG_DNS` | IP de la máquina si hay SHIELD-DNS; si no, `1.1.1.1` | DNS de los dispositivos conectados (solo primer arranque) |
-| `WEB_PORT` | `51843` | Puerto del panel HTTPS |
-| `LAN_IP`, `PI_HOSTNAME` | los detecta `install.sh` | Nombres con los que se sirve el panel |
-| `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` | vacías | DNS dinámico gratuito (opcional) |
-
-Para cambiar algo marcado como «solo primer arranque» cuando ya está funcionando, usa el panel web (apartado de administración). La otra opción es empezar de cero (`./uninstall.sh --purge` y `./install.sh`), pero **todos los dispositivos tendrían que volver a escanear su QR**.
+Todo se guarda en `.env`; lo rellena `install.sh`. Detalle en la [guía técnica](docs/DESARROLLO.md).
 
 ## 🌍 Si tu IP pública cambia (DNS dinámico)
 
@@ -324,27 +291,6 @@ Solo las teles con **Android TV / Google TV** tienen app de WireGuard. Instálal
 <br>
 
 Cámbiala desde el propio panel (en el menú de tu cuenta). El valor de `.env` no se actualiza solo y editarlo no cambia la contraseña. Si usas ARIA, pon la nueva también en su `VPN_PASSWORD`.
-
-</details>
-
-<details>
-<summary><b>⏸️ Apagar la VPN un rato</b></summary>
-<br>
-
-```bash
-docker compose --profile ddns down   # apagar (también DuckDNS, si lo usas)
-./install.sh                          # volver a encenderla
-```
-
-</details>
-
-<details>
-<summary><b>📜 Ver los registros</b></summary>
-<br>
-
-```bash
-docker compose logs -f wg-easy
-```
 
 </details>
 
@@ -490,7 +436,11 @@ Es lo esperado: solo vale en el primer arranque. Cámbialo en el panel.
 <summary><b>He olvidado la contraseña del panel</b></summary>
 <br>
 
-Si nunca la cambiaste en el panel, está en `.env` (`grep WG_ADMIN_PASSWORD .env`).
+Si nunca la cambiaste en el panel, está en `.env` (`grep WG_ADMIN_PASSWORD .env`). Si no, desde la carpeta de HEIMDALL:
+```bash
+docker compose exec -it wg-easy cli db:admin:reset
+```
+(te pide la nueva). Editar `.env` no la cambia.
 </details>
 
 <details>
@@ -507,15 +457,9 @@ El DNS de la VPN debe ser SHIELD-DNS.
 - **Streaming**: salir por tu casa no garantiza que una plataforma te trate como «en casa»; usan más señales que la IP.
 - En SHIELD-DNS, las consultas que llegan por la VPN aparecen con la IP interna de Docker, no con la del dispositivo.
 
-## 🔌 Puertos y contenedores
+Solo hay que abrir el puerto UDP 51820 en el router; el panel 51843 se queda en casa.
 
-| Contenedor | Puerto | Protocolo | Uso |
-|---|---|---|---|
-| `heimdall-wg` | 51820 | UDP | Conexiones VPN (ábrelo en el router) |
-| `heimdall-caddy` | 51843 | TCP | Panel HTTPS (solo en casa) |
-| `heimdall-duckdns` | — | — | DNS dinámico (solo si lo configuras) |
-
-Documentación para quien quiera modificar el proyecto: [CLAUDE.md](CLAUDE.md), [AGENTS.md](AGENTS.md), [SKILLS.md](SKILLS.md) y [MEMORY.md](MEMORY.md).
+🛠️ ¿Quieres modificar HEIMDALL? Mira la [guía técnica](docs/DESARROLLO.md). Para avisar de un fallo de seguridad: [SECURITY.md](SECURITY.md).
 
 ## 🌐 El ecosistema ARIA
 
