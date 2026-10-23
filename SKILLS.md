@@ -12,7 +12,7 @@
 | Añadir PC/Mac | Panel -> Nuevo cliente -> descargar `.conf` | 2 min |
 | Revocar dispositivo | Panel -> cliente -> eliminar | <30 s |
 | Ver conectados | Panel -> Pares | <5 s |
-| Cambiar contraseña | Panel -> Administración | 1 min |
+| Cambiar contraseña | Panel -> menú de usuario -> Cuenta -> Contraseña | 1 min |
 | Configurar DuckDNS | `.env` y `./install.sh` | 3 min |
 | Ver logs | `docker compose logs -f wg-easy` | - |
 | Probar VPN | `wg-quick up client.conf` desde otra máquina | 5 s |
@@ -58,7 +58,7 @@ En `Pares` se muestran nombre, último handshake, tráfico y acciones disponible
 
 ## 7. Cambiar la contraseña
 
-Desde el panel entra en Administración y cambia la contraseña. `.env` no se sincroniza automáticamente.
+En el panel abre el menú de usuario (arriba a la derecha) → **Cuenta**; en el apartado **Contraseña** escribe la actual y la nueva y pulsa **Actualizar contraseña**. `.env` no se sincroniza automáticamente.
 
 Si la has olvidado, desde la carpeta de HEIMDALL ejecuta:
 
@@ -99,7 +99,7 @@ Usa el script del proyecto, que hace la copia antes de descargar cambios:
 ./update.sh
 ```
 
-Los clientes se conservan en `data/wireguard/`.
+Los clientes se conservan en `data/wireguard/`. Si el `Caddyfile` ha cambiado (por ejemplo, las cabeceras de seguridad del 24/10/2026), aplícalo con `docker compose restart caddy`: Caddy no lo recarga solo.
 
 ## 12. Desinstalar sin perder clientes
 

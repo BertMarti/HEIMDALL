@@ -50,7 +50,7 @@ Es idempotente: solo rellena variables vacías y no reemplaza datos persistentes
 | `heimdall-caddy` | `51843/tcp` | Host/LAN | Panel HTTPS |
 | `heimdall-duckdns` | - | Ninguna | DNS dinámico opcional, perfil `ddns` |
 
-La red se llama `heimdall`. Caddy hace `reverse_proxy wg-easy:51821`. `default_sni {$LAN_IP}` permite el acceso por IP y `tls internal` crea certificados internos. Las cabeceras son `nosniff`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`; no hay CSP ni HSTS en Caddy.
+La red se llama `heimdall`. Caddy hace `reverse_proxy wg-easy:51821`. `default_sni {$LAN_IP}` permite el acceso por IP y `tls internal` crea certificados internos. Las cabeceras son `nosniff`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`; no hay CSP ni HSTS en Caddy. El `Caddyfile` va montado en el contenedor y Caddy no lo recarga solo: tras cambiarlo (o tras `./update.sh`), `docker compose restart caddy`.
 
 ## DNS de los dispositivos conectados
 
@@ -139,12 +139,7 @@ La CI real tiene estos jobs:
 
 Pages ejecuta `site/construir.sh`, sube `_site` con `upload-pages-artifact` y publica con `deploy-pages`. Se dispara en `push` a `main` que toque `site/`, `docs/img/` o el workflow, y manualmente. Publica solo la web de `site/`, no la documentación Markdown.
 
-## Herramientas útiles
-
-```bash
-```
-
-Para previsualizar la web:
+## Vista previa de la web
 
 ```bash
 site/construir.sh /tmp/heimdall-web/HEIMDALL

@@ -6,7 +6,7 @@
 - CI (`.github/workflows/ci.yml`): `bash -n`, ShellCheck, `docker compose config`, `caddy validate`, gitleaks y comprobación de la web.
 - Dependabot semanal y agrupado para imágenes Docker y GitHub Actions.
 - `.gitleaks.toml` con lista de permitidos concreta para marcadores de ejemplo antiguos.
-- Cabeceras de seguridad en el panel (Caddy): nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy y sin cabecera Server.
+- Cabeceras de seguridad en el panel (Caddy): nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy y sin cabecera Server. En una instalación existente se aplican tras `./update.sh` con `docker compose restart caddy` (Caddy no recarga el `Caddyfile` solo).
 - `PLAN.md`, `docs/DESARROLLO.md`, subagentes en `.claude/agents/` y skills en `.claude/skills/`.
 - `SECURITY.md` para avisos privados de vulnerabilidades.
 - Web estática en `site/` y workflow de GitHub Pages.

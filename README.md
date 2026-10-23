@@ -306,7 +306,7 @@ Solo las teles con **Android TV / Google TV** tienen app de WireGuard. Instálal
 <summary><b>🔑 Cambiar la contraseña del panel</b></summary>
 <br>
 
-Cámbiala desde el propio panel (en el menú de tu cuenta). El valor de `.env` no se actualiza solo y editarlo no cambia la contraseña. Si usas ARIA, pon la nueva también en su `VPN_PASSWORD`.
+Cámbiala desde el propio panel: menú de usuario (arriba a la derecha) → **Cuenta** → apartado **Contraseña** → **Actualizar contraseña**. El valor de `.env` no se actualiza solo y editarlo no cambia la contraseña. Si usas ARIA, pon la nueva también en su `VPN_PASSWORD`.
 
 </details>
 
@@ -391,6 +391,13 @@ cd ~/homelab/HEIMDALL
 ```
 
 Hace una copia, descarga el código y las imágenes nuevas y vuelve a instalar. Los dispositivos se conservan (están en `data/wireguard/`).
+
+> [!IMPORTANT]
+> Caddy lee el `Caddyfile` al arrancar y no lo recarga solo. Tras actualizar, aplica los cambios del panel (por ejemplo, las cabeceras de seguridad del 24/10/2026) con:
+>
+> ```bash
+> docker compose restart caddy
+> ```
 
 </details>
 

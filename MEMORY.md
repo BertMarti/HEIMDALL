@@ -95,7 +95,6 @@ Tres clientes conectados en paralelo mantuvieron handshake y tráfico; el panel 
 - Imágenes: `wg-easy:15` y `caddy:2-alpine` ya van fijadas a versión mayor; `linuxserver/duckdns:latest` queda pendiente
   de fijar (no se cambió hoy para no tocar producción sin probar). Dependabot propondrá las subidas.
 - Scripts: solo arreglos de ShellCheck sin cambio de comportamiento (perfiles de compose en array, variable de bucle).
-- Gemini 3 Flash y 3.5 Flash agotaron su cuota gratuita diaria durante el trabajo; GPT-5.6 Luna terminó la documentación.
 
 ## Estado actual (24/10/2026)
 
