@@ -1,271 +1,110 @@
-# MEMORY.md – Decisiones, registro de pruebas e historial
+# MEMORY.md - Decisiones, pruebas y estado
 
 ## Decisiones de diseño
 
-### Por qué wg-easy + Caddy
+### wg-easy + Caddy
 
-- **wg-easy v15:** interfaz web completa para gestionar clientes VPN, API REST, generación automática de perfiles
-- **Caddy 2 Alpine:** reverse proxy ligero, genera certificados internos automáticamente (perfecto para redes domésticas)
-- **Integración:** Caddy protege con TLS; wg-easy no necesita saber de HTTPS
+- `wg-easy` v15 gestiona WireGuard, clientes, perfiles, QR y API.
+- Caddy 2 Alpine termina TLS y genera una CA interna.
+- wg-easy escucha la web y la API en `51821/TCP` dentro de la red Docker; no publica ese puerto en el host.
 
-### Topología de la red Docker
+### Red Docker
 
-```
+```text
 docker network heimdall
-├── wg-easy (WireGuard VPN)
-│   ├── Expone: 51820/UDP (público para clientes VPN)
-│   ├── Expone: 51821/TCP (API interna, solo Caddy accede)
-│   └── Genera claves en: data/wireguard/
-│
-└── caddy (reverse proxy HTTPS)
-    ├── Lee: Caddyfile
-    ├── Genera CA interna automáticamente
-    ├── Expone: 51843/TCP (panel web seguro)
-    └── Almacena certs en: data/caddy/
+├── wg-easy
+│   ├── 51820/UDP publicado para clientes VPN
+│   ├── 51821/TCP interno para Caddy
+│   └── data/wireguard/
+└── caddy
+    ├── 51843/TCP publicado para la LAN
+    ├── default_sni {$LAN_IP}
+    └── data/caddy/
 ```
 
-### Por qué INIT_* solo se aplican al arranque
+`default_sni {$LAN_IP}` es necesario para que el acceso por IP reciba el certificado correcto. IPv6 está desactivado con `DISABLE_IPV6=true` para evitar rutas y fugas DNS no controladas.
 
-Razón: wg-easy guarda configuración en `data/wireguard/`. Si el usuario edita `.env` después del primer arranque, esperaría que los cambios apliquen, pero los `INIT_*` están ignorados.
+### Inicialización
 
-**Solución:** cambios posteriores se hacen desde el panel web. Si quieres cambios de `.env`, borra `data/wireguard/`.
+`INIT_USERNAME`, `INIT_PASSWORD`, `INIT_HOST`, `INIT_PORT` e `INIT_DNS` solo se aplican cuando se crea por primera vez `data/wireguard/`. Cambios posteriores se hacen en el panel o con la CLI de wg-easy. Borrar esos datos reinicializa el servidor y los clientes.
 
-### Caddyfile con `default_sni {$LAN_IP}`
+### SHIELD-DNS
 
-```
-default_sni {$LAN_IP}
-```
-
-Esto es crítico. Sin ella, navegadores que acceden por IP (ej. `https://192.168.1.10:51843`) sin TLS SNI (Server Name Indication) reciben un error de certificado.
-
-**Por qué:** Caddy necesita saber qué certificado servir. Sin SNI, por defecto sirve el del primer host. `default_sni` le dice que use el certificado para `$LAN_IP`.
-
-### Integración automática con SHIELD-DNS
-
-En `install.sh`, líneas 48-56:
-```bash
-if $DOCKER ps --format '{{.Names}}' | grep -qx shield-pihole; then
-  set_env WG_DNS "$LAN_IP_DET"  # Usa SHIELD-DNS
-else
-  set_env WG_DNS "1.1.1.1"      # Fallback Cloudflare
-fi
-```
-
-Si Pi-hole está corriendo en la Raspberry, HEIMDALL lo detecta y configura automáticamente como DNS de la VPN. Esto hace que los clientes VPN tengan bloqueo de anuncios.
-
-### IPv6 deshabilitado en la VPN
-
-`DISABLE_IPV6=true` en docker-compose.yml.
-
-Razón: casi toda la internet todavía es IPv4. IPv6 requería configuración adicional (subredes, routing). Para no complicar, se deshabilitó.
-
-**Impacto:** sitios solo-IPv6 no funcionarán (extremadamente raro en 2026).
-
----
+Si `shield-pihole` está activo durante la instalación, `install.sh` configura la IP LAN como `WG_DNS`; en otro caso usa `1.1.1.1`. Esto solo se decide al primer arranque.
 
 ## Puertos de los tres proyectos
 
 | Proyecto | Servicio | Puerto | Protocolo | Notas |
-|----------|----------|--------|-----------|-------|
-| **ARIA** | Web UI | 80 | TCP | Redirige a 443 |
-| **ARIA** | Web UI | 443 | TCP | HTTPS |
-| **SHIELD-DNS** | DNS | 53 | TCP/UDP | Obligatorio en la red |
-| **SHIELD-DNS** | Panel HTTP | 8080 | TCP | Redirige a 8443 |
-| **SHIELD-DNS** | Panel HTTPS | 8443 | TCP | Autofirmado |
-| **HEIMDALL** | WireGuard | 51820 | UDP | Se reenvía en router |
-| **HEIMDALL** | Panel HTTPS | 51843 | TCP | Autofirmado (CA interna) |
-
----
+|---|---|---:|---|---|
+| ARIA | Web UI | 80 | TCP | Redirige a 443 |
+| ARIA | Web UI | 443 | TCP | HTTPS |
+| SHIELD-DNS | DNS | 53 | TCP/UDP | Servicio DNS |
+| SHIELD-DNS | Panel HTTP | 8080 | TCP | Redirige a 8443 |
+| SHIELD-DNS | Panel HTTPS | 8443 | TCP | Autofirmado |
+| HEIMDALL | WireGuard | 51820 | UDP | Se reenvía en el router |
+| HEIMDALL | Panel HTTPS | 51843 | TCP | Solo LAN, CA interna |
 
 ## Resultados de pruebas verificadas (2026-10-06)
 
 ### Test 1: Instalación idempotente
-**Comando:**
-```bash
-./install.sh
-./install.sh
-```
+`./install.sh` ejecutado dos veces completó ambas ejecuciones sin errores ni cambios innecesarios. Conclusión: instalador idempotente.
 
-**Resultado:** ambas ejecuciones completadas sin errores. La segunda no hizo cambios innecesarios.
+### Test 2: Cliente mediante API
+Una llamada autenticada a la API `/api/client` creó un cliente y devolvió su perfil WireGuard. Conclusión: API funcional con autenticación HTTP Basic.
 
-**Conclusión:** ✓ El script es idempotente
+### Test 3: Túnel VPN
+Desde otra máquina se descargó un perfil, se levantó con `wg-quick`, respondió `10.8.0.1`, apareció `wg0` y el tráfico salió por la IP pública de casa. El handshake se confirmó en `wg show`.
 
-### Test 2: Crear cliente via API
-**Comando:**
-```bash
-curl -k -u admin:PASSWORD "https://127.0.0.1:51843/api/client" -X POST \
-  -H "Content-Type: application/json" -d '{"name":"test_client"}'
-```
+### Test 4: DNS por la VPN
+Con SHIELD-DNS instalado, una consulta a `doubleclick.net` desde un cliente conectado devolvió `0.0.0.0`. Conclusión: bloqueo activo.
 
-**Resultado:** retorna JSON con el cliente creado, incluyendo el perfil WireGuard.
+### Test 5: TLS
+Caddy devolvió `HTTP/2 200`; generó correctamente certificados autofirmados mediante su CA interna.
 
-**Conclusión:** ✓ API WireGuard funciona con autenticación HTTP Basic
-
-### Test 3: Túnel VPN funcional
-**Comando (desde otra máquina):**
-```bash
-# Descargar config
-curl -k -u admin:PASSWORD "https://RASPBERRY-IP:51843/api/client/TEST_ID/configuration" > test.conf
-
-# Conectar
-sudo wg-quick up ./test.conf
-
-# Verificar
-ip link show wg0
-ping 10.8.0.1  # Servidor VPN
-
-# Tráfico
-curl https://api.ipify.org  # Debe retornar IP de la casa, no la del cliente
-```
-
-**Resultado:**
-- Interfaz `wg0` aparece como `UP`
-- `10.8.0.1` responde a ping (servidor accesible)
-- Tráfico sale por IP pública de la Raspberry (correcto)
-- Handshake confirmado en `docker exec heimdall-wg wg show`
-
-**Conclusión:** ✓ Túnel VPN completamente funcional, datos pasan correctamente
-
-### Test 4: DNS a través de VPN
-**Comando:**
-```bash
-# Con SHIELD-DNS instalado
-# Cliente VPN está conectado
-dig +short doubleclick.net  # Desde cliente conectado
-```
-
-**Resultado:** `0.0.0.0` (bloqueado por SHIELD-DNS)
-
-**Conclusión:** ✓ DNS dinámico a través de VPN funciona; bloqueo de anuncios activo
-
-### Test 5: Certificados TLS
-**Comando:**
-```bash
-curl -k -I https://127.0.0.1:51843/
-```
-
-**Resultado:**
-```
-HTTP/2 200
-```
-
-**Conclusión:** ✓ Certificados autofirmados generados por Caddy; navegadores los rechazan pero funcionan
-
-### Test 6: Múltiples clientes simultáneos
-**Setup:** 3 clientes conectados en paralelo
-
-**Resultado:**
-- Todos los handshakes activos
-- Tráfico fluye por todos (ping, web, etc.)
-- Panel web muestra 3 pares conectados
-
-**Conclusión:** ✓ Múltiples clientes funcionan sin problemas
-
----
+### Test 6: Clientes simultáneos
+Tres clientes conectados en paralelo mantuvieron handshake y tráfico; el panel mostró los tres pares.
 
 ## Limitaciones conocidas
 
-### 1. Streaming detecta que no estás en casa
-
-Netflix, Disney+, Amazon Prime, etc., usan varias señales:
-- **IP pública:** la VPN te hace salir por tu casa ✓
-- **Pero también:** GPS, velocidad de red, dispositivo conocido, etc. ✗
-
-**Impacto:** la VPN ayuda, pero no garantiza acceso a contenido regional.
-
-**Solución:** no hay una perfecta. Algunos usuarios dicen que funciona; otros que no.
-
-### 2. TVs normales no soportan WireGuard
-
-Solo Android TV / Google TV tienen apps WireGuard.
-
-**Impacto:** no puedes conectar un Samsung TV o LG TV directamente a HEIMDALL.
-
-**Solución:** router con WireGuard integrado, o Raspberry Pi adicional como puerta de enlace.
-
-### 3. CG-NAT de ISP
-
-Si el ISP usa Carrier Grade NAT, la IP del router difiere de la IP pública real. El reenvío de puertos no funcionará.
-
-**Impacto:** imposible conectar desde fuera sin DuckDNS (y aun así tendrías que usar el nombre de dominio, no la IP).
-
-**Solución:** pedir al ISP una IP pública dedicada, o usar DuckDNS + aceptar que solo funciona si te da acceso publicitario.
-
-### 4. IPv6 deshabilitado
-
-Los dispositivos en VPN solo usan IPv4.
-
-**Impacto:** sitios solo-IPv6 no funcionan (rarísimo).
-
----
-
-## Changelog
-
-### 2026-10-06 – Documentación completa
-
-**Cambios:**
-- Creados: README.md, CLAUDE.md, AGENTS.md, SKILLS.md, MEMORY.md, LICENSE
-
-**Estado:**
-- wg-easy v15 + Caddy 2 Alpine verificados
-- Todas las pruebas de funcionalidad completadas con éxito
-- Instalador idempotente confirmado
-- Integración automática con SHIELD-DNS verificada
-- Múltiples clientes simultáneos testeados
-
-**Notas:**
-- Proyecto estable para uso doméstico
-- Documentación lista para usuarios no técnicos
-- Procedimientos operacionales completos
-
----
+1. Streaming puede detectar que el dispositivo no está físicamente en casa aunque la IP pública sea la de casa.
+2. Solo Android TV y Google TV tienen aplicación WireGuard; los televisores LG y Samsung no se conectan directamente.
+3. CG-NAT impide el reenvío de puertos; DuckDNS resuelve el nombre, no el bloqueo del operador.
+4. IPv6 está deshabilitado, por lo que los destinos solo IPv6 no funcionan.
 
 ## Decisiones de seguridad
 
-### Contraseñas
-- Generadas aleatoriamente (20 caracteres, sin `/+=`)
-- Almacenadas en `.env` local (no en repo)
-- Cambio manual: panel web
-
-### Certificados TLS
-- Caddy genera CA interna automáticamente (v2 feature)
-- Autofirmados: navegadores mostrarán advertencia (normal)
-- No hay verificación HTTPS real en LAN (no necesaria)
-
-### Aislamiento de red
-- Contenedores en red privada `heimdall`
-- WireGuard (51820) reenviado públicamente (debe estar en router)
-- Panel (51843) solo accesible en LAN
-
-### API
-- HTTP Basic auth (usuario + contraseña de `.env`)
-- No expuesta públicamente
-- Usada solo por Caddy internamente
-
----
-
-## Roadmap futuro (especulativo)
-
-- [ ] OAuth/OIDC integrado con ARIA
-- [ ] Límites de ancho de banda por cliente
-- [ ] Estadísticas detalladas de tráfico
-- [ ] Backup automático de clientes
-- [ ] Mobile app nativa (en lugar de web)
-- [ ] Múltiples servidores VPN (balanceo)
-
-No son compromisos, solo ideas.
-
----
-
-## Referencias
-
-- [wg-easy on GitHub](https://github.com/wg-easy/wg-easy)
-- [WireGuard Official](https://www.wireguard.com/)
-- [Caddy Documentation](https://caddyserver.com/docs/)
-- [DuckDNS](https://www.duckdns.org/)
-- [Docker Networking](https://docs.docker.com/network/)
+- `install.sh` genera contraseñas aleatorias de 20 caracteres y las guarda en `.env` local.
+- Caddy usa una CA interna; no se activa HSTS porque el certificado no es público.
+- El panel solo se publica en la LAN; WireGuard es el único puerto que se reenvía desde internet.
+- La API no se publica en el host y se usa detrás de Caddy.
 
 ## Copias de seguridad y actualización (2026-10-07)
 
-- `backup.sh`, `restore.sh` y `update.sh` añadidos y probados en la Pi: copia → cambio → restauración devuelve el estado guardado.
-- `update.sh` siempre hace copia antes de actualizar.
+`backup.sh`, `restore.sh` y `update.sh` se probaron en la Pi: copia, cambio y restauración devolvieron el estado guardado. `update.sh` siempre hace una copia antes de actualizar.
+
+## 24/10/2026 - mejoras
+
+- Se añadió `SECURITY.md`, la web estática en `site/` y la comprobación de puertos publicados en CI.
+- Pages publica solo la web construida desde `site/`, no la documentación.
+- `.gitleaks.toml` permite únicamente los tres marcadores administrativos concretos y el token de ejemplo documentado en esa configuración.
+- Se corrigió la documentación: editar `.env` no cambia una contraseña ya inicializada; se usa `cli db:admin:reset`.
+- La CI comprueba que solo se publican `51820/udp` y `51843/tcp`.
+- Caddy añade cabeceras de seguridad al panel. **Sin HSTS a propósito**: el certificado es de la CA interna de Caddy y,
+  con HSTS, el navegador no dejaría saltar su aviso. ARIA no incrusta el panel en un iframe, así que `X-Frame-Options DENY`
+  no le afecta (comprobado en su código el 24/10/2026; conviene confirmarlo en la Pi tras fusionar).
+- Imágenes: `wg-easy:15` y `caddy:2-alpine` ya van fijadas a versión mayor; `linuxserver/duckdns:latest` queda pendiente
+  de fijar (no se cambió hoy para no tocar producción sin probar). Dependabot propondrá las subidas.
+- Scripts: solo arreglos de ShellCheck sin cambio de comportamiento (perfiles de compose en array, variable de bucle).
+- Gemini 3 Flash y 3.5 Flash agotaron su cuota gratuita diaria durante el trabajo; GPT-5.6 Luna terminó la documentación.
+
+## Estado actual (24/10/2026)
+
+Proyecto estable para uso doméstico, con CI de scripts, Compose, Caddy, secretos y web, workflow de Pages, copias probadas y documentación separada para usuarios y mantenimiento.
+
+## Referencias
+
+- [wg-easy](https://github.com/wg-easy/wg-easy)
+- [WireGuard](https://www.wireguard.com/)
+- [Caddy](https://caddyserver.com/docs/)
+- [DuckDNS](https://www.duckdns.org/)
+- [Docker Networking](https://docs.docker.com/network/)
