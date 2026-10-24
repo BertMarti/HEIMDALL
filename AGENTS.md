@@ -1,115 +1,60 @@
-# AGENTS.md – Distribución de trabajo para agentes
+# AGENTS.md - Guía para agentes de IA en HEIMDALL
 
-## Reparto recomendado
+HEIMDALL es una VPN autoalojada basada en WireGuard (`wg-easy` v15), con Caddy como proxy HTTPS. Forma parte del ecosistema ARIA junto con SHIELD-DNS y está pensado para Raspberry Pi o PC Linux con Docker.
 
-### Modelo económico (ej. Haiku)
-**Tareas:** edición de documentación, cambios mecánicos, verificación de sintaxis
+## Estructura y reglas
 
-- Actualizar `.env.example` con nuevas variables
-- Editar README.md y procedimientos
-- Cambios en puertos o variables de configuración
-- Revisar que Caddyfile esté bien formado
-- Formatear scripts bash
+- Los scripts principales están en la raíz: `install.sh`, `update.sh`, `backup.sh`, `restore.sh` y `uninstall.sh`.
+- `docs/` contiene la guía técnica y las imágenes; `site/` contiene únicamente la web estática.
+- `docker-compose.yml` define `wg-easy`, `caddy` y el perfil opcional `ddns`.
+- `.env` y `data/` son locales y no deben leerse, solicitarse ni publicarse.
+- Escribe documentación y mensajes en español de España.
+- Los scripts Bash usan `#!/usr/bin/env bash` y `set -euo pipefail`, y deben ser idempotentes.
+- Las variables `INIT_*` solo se aplican al crear por primera vez los datos de wg-easy. Después se usa el panel o la CLI.
 
-### Modelo de razonamiento profundo (ej. Opus)
-**Tareas:** debugging de red/VPN, diseño arquitectónico, resolución de problemas complejos
+## Seguridad y producción
 
-- Debuguear problemas de conectividad VPN
-- Diseñar cambios en la topología de Docker
-- Resolver conflictos de certificados o TLS
-- Integración entre HEIMDALL y SHIELD-DNS
-- Procedimientos de migración de datos o cambios de endpoint
-- Testing end-to-end de túneles VPN
+El repositorio es público: no incluyas IPs reales, dominios privados, nombres, MACs, claves, perfiles `.conf`, QR ni secretos. Ejemplos permitidos: `192.168.1.50`, `192.168.1.1`, `10.8.0.x`, `1.1.1.1` y `micasa.duckdns.org`.
 
-## División por área
+HEIMDALL está en producción. No ejecutes `install.sh`, `update.sh`, `restore.sh` ni `uninstall.sh` sobre una instalación real sin autorización explícita. Tampoco ejecutes comandos Docker que manipulen los contenedores `heimdall-*`. Usa validación estática y máquinas de prueba.
 
-| Área | Modelo económico | Modelo fuerte | Notas |
-|------|------------------|---------------|-------|
-| Documentación, README | ✓ | — | Edición directa, sin complejidad de red |
-| .env.example, variables | ✓ | — | Cambios simples; lógica de dependencias → fuerte |
-| docker-compose.yml | — | ✓ | Cambios de red, INIT_* requieren validación |
-| Caddyfile | — | ✓ | TLS/SNI es crítico; errores rompen conectividad |
-| Scripts bash | — | ✓ | Lógica condicional, idempotencia, manejo de errores |
-| Debugging de conectividad | — | ✓ | Requiere entender WireGuard, iptables, DNS, routing |
-| Integración con SHIELD-DNS | — | ✓ | Coordinación entre dos proyectos, testing completo |
-| Testing de VPN | — | ✓ | Crear clientes, conectar túneles, verificar datos |
+## Trabajo con varios modelos
 
-## Flux de trabajo sugerido
+| Papel | Modelo | Uso |
+|---|---|---|
+| Orquestador | Claude Code, modelo Opus | Planificación, arquitectura, integración y revisión final |
+| Código e interfaz | `openai/gpt-5.6-luna` | Cambios de código y UI siguiendo los patrones del proyecto |
+| Documentación | `google/gemini-3-flash-preview` | Documentación y traducciones; si no hay cuota, `gemini-3.5-flash` o `gemini-3.7-flash` |
+| Pruebas y accesibilidad sin datos sensibles | OpenCode Zen gratis: `big-pickle`, `mimo-v2.6-flash-free` | Consultas, verificaciones y borradores sin secretos |
+| Revisión cruzada de solo lectura | `google/gemini-3.7-flash` con `--agent plan` | Auditoría independiente sin modificar archivos |
 
-1. **Tarea en modelo económico:** actualizar documentación o variables simples
-   - Lee el archivo, verifica con `git diff`
-   - Commitea si es seguro (sin cambios de lógica)
+Claude orquesta y revisa. Los delegados trabajan en un worktree separado, no reciben secretos y no hacen commit, push ni despliegues.
 
-2. **Tarea en modelo fuerte:** debugging o cambios de arquitectura
-   - Lee docker-compose.yml, Caddyfile, install.sh
-   - Entiende las dependencias (INIT_*, LAN_IP, WG_HOST, etc.)
-   - Toma decisiones de diseño
-   - Crea un cliente de prueba y verifica el túnel
-   - Commitea con mensaje detallado en español
+## Validación
 
-3. **Trabajo en paralelo:** si hay dos tareas independientes (doc + bugfix), dos agentes pueden trabajar en paralelo
+Ejecuta, cuando proceda:
 
-## Limitaciones conocidas
+```bash
+bash -n *.sh site/*.sh
+shellcheck *.sh site/*.sh
+cp .env.example /tmp/heimdall.env
+sed -i -e 's/^WG_ADMIN_PASSWORD=.*/WG_ADMIN_PASSWORD=solo-para-ci/' -e 's/^WG_HOST=.*/WG_HOST=vpn.example.com/' -e 's/^LAN_IP=.*/LAN_IP=192.168.1.50/' -e 's/^PI_HOSTNAME=.*/PI_HOSTNAME=raspberrypi/' /tmp/heimdall.env
+```
 
-- No hay CI/CD automatizado (tests manuales via SSH en la Pi)
-- Cambios de red requieren verificación manual en hardware real
-- El reenvío de puertos depende de la configuración de cada router (no es verificable remotamente)
-- CG-NAT de algunos ISPs impide reenvío de puertos; no hay solución en el código
+Para Caddy se usa un binario local o el mismo contenedor de CI (`caddy:2-alpine`) con `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. No se valida ejecutando Docker sobre la máquina de producción.
+
+Para previsualizar la web:
+
+```bash
+site/construir.sh /tmp/heimdall-web/HEIMDALL
+python3 -m http.server 8000 -d /tmp/heimdall-web
+```
+
+La red real solo se puede verificar en hardware real. El reenvío depende del router y CG-NAT puede impedir conexiones entrantes.
 
 ## Ejemplos de tareas
 
-### Tarea A: "Actualizar instrucciones de DuckDNS en README"
-→ **Modelo económico** (edita README.md)
-
-### Tarea B: "Debuguear por qué Caddy retorna 'certificate verify failed'"
-→ **Modelo fuerte** (verifica Caddyfile, SSL/TLS, usa `docker logs`)
-
-### Tarea C: "Hacer que HEIMDALL detecte automáticamente SHIELD-DNS"
-→ **Modelo fuerte** (complejo: requiere cambiar install.sh, testing)
-
-### Tarea D: "Un cliente no puede conectar desde fuera de casa"
-→ **Modelo fuerte** (debugging: CG-NAT?, puerto reenviado?, firewall?)
-
-### Tarea E: "Añadir nuevo parámetro 'WG_SUBNET' al .env.example"
-→ **Modelo económico** (edita .env.example, README)
-
-### Tarea F: "Implementar backup automático de perfiles VPN"
-→ **Modelo fuerte** (script complejo, testing, integración con .env)
-
-## Reunión diaria (si hay sprints)
-
-- **Modelo económico:** repasa cambios de doc y variables de la mañana
-- **Modelo fuerte:** planifica cambios de red, verifica tests, coordina con SHIELD-DNS si es necesario
-
-## Trabajo con varios modelos (opcional, vía OpenCode)
-
-Un agente orquestador (por ejemplo Claude en Claude Code) puede repartir tareas entre los modelos que tengas conectados en [OpenCode](https://opencode.ai): GitHub Copilot, ChatGPT, Gemini, modelos gratuitos de OpenCode Zen, etc. Así se ahorra cuota del modelo principal sin perder el control.
-
-**Papeles**
-- **Orquestador:** entiende la petición, planifica, divide en tareas pequeñas con rutas y objetivo concretos, revisa todo lo que vuelve, pasa las pruebas, hace commit y despliega. Es el único que hace commit, push o despliega.
-- **Delegados:** reciben una tarea cerrada (escribir una función, redactar documentación, revisar un diff) y devuelven el resultado.
-
-**Cómo delegar**
-```bash
-opencode models                    # modelos disponibles (proveedor/modelo)
-opencode auth list                 # cuentas conectadas
-# Revisión o consulta, sin tocar archivos:
-opencode run --agent plan -m <proveedor/modelo> --dir <repo> "Revisa ... y lista los problemas"
-# Cambios: siempre en un worktree aparte, nunca en la copia desplegada
-git worktree add ../.wt/<tarea> -b feat/<tarea>
-opencode run -m <proveedor/modelo> --dir ../.wt/<tarea> "Implementa ... siguiendo AGENTS.md"
-```
-
-**Reparto orientativo**
-| Tarea | Modelo |
-|---|---|
-| Diseño, seguridad, depuración difícil, revisión final | El más capaz (orquestador) |
-| Implementar funciones siguiendo un patrón existente | Modelo de código (Copilot / GPT) |
-| Documentación, traducciones, textos | Modelo rápido (Gemini / Copilot) |
-| Búsquedas, resúmenes, borradores sin datos sensibles | Modelos gratuitos (Zen) |
-
-**Reglas**
-- Nunca pases a un delegado secretos, `.env`, contraseñas ni datos personales. Con los modelos **gratuitos**, todavía menos: algunos usan lo que reciben para entrenar.
-- Los delegados no hacen commit, push ni despliegues, ni tocan servicios en marcha. Las revisiones se hacen con `--agent plan` (solo lectura).
-- Todo lo que devuelva un delegado lo revisa el orquestador y pasa la suite completa de pruebas antes de integrarse.
-- Dale a cada delegado el contexto que necesita (rutas, este `AGENTS.md`, criterios de aceptación): no comparte la memoria del orquestador.
+- Documentación o cambios mecánicos: modelo de documentación.
+- Revisar un flujo VPN, TLS, Docker o SHIELD-DNS: Claude y revisión cruzada de solo lectura.
+- Implementar una función o una mejora de interfaz: `openai/gpt-5.6-luna` en worktree separado.
+- Pruebas manuales sin datos sensibles y accesibilidad: OpenCode Zen gratis.
