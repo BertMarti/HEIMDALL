@@ -40,7 +40,10 @@ done
 generar_clave() { head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | cut -c1-24; }
 
 # Lee una variable de .env sin ejecutarlo (vacío si no existe).
-leer_env() { [ -f .env ] && grep -E "^$1=" .env | tail -n1 | cut -d= -f2- | sed -E 's/^"(.*)"$/\1/' || true; }
+leer_env() {
+  [ -f .env ] || return 0
+  { grep -E "^$1=" .env || true; } | tail -n1 | cut -d= -f2- | sed -E 's/^"(.*)"$/\1/'
+}
 
 # Escribe CLAVE=VALOR en .env (sustituye la línea o la añade). Con awk: el valor no se interpreta.
 poner_env() {

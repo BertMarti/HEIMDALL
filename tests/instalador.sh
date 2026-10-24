@@ -2,6 +2,9 @@
 # Pruebas de install.sh SIN tocar nada real: cada caso copia el instalador a una carpeta temporal y
 # lo ejecuta con un PATH aislado en el que docker, sudo, ss, curl, ip... son dobles de prueba.
 # Nunca llega a Docker, a la red ni a los puertos de verdad. Uso: tests/instalador.sh
+# Las comillas simples son a propósito (dobles de prueba y condiciones que se evalúan después) y
+# CODIGO se usa dentro de esas condiciones con eval.
+# shellcheck disable=SC2016,SC2034
 set -uo pipefail
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
 BASE="$(mktemp -d)"; trap 'rm -rf "$BASE"' EXIT
