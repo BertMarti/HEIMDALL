@@ -17,7 +17,7 @@
   <header class="cabecera">
     <div class="barra">
       <a class="marca" href="index.html" aria-label="HEIMDALL, inicio"><svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5zM12 14v3"/></svg> HEIMDALL</a>
-      <nav class="nav" aria-label="Navegación principal"><a href="#que-es">Qué es</a><a href="#como-funciona">Cómo funciona</a><a href="#instalar">Instalar</a><a href="#usar">Usar</a><a href="#aria">ARIA</a><a href="#preguntas">Preguntas</a></nav>
+      <nav class="nav" aria-label="Navegación principal"><a href="#empieza">Empieza</a><a href="#que-es">Qué es</a><a href="#como-funciona">Cómo funciona</a><a href="#instalar">Instalar</a><a href="#usar">Usar</a><a href="#aria">ARIA</a><a href="#preguntas">Preguntas</a></nav>
       <button class="tema" type="button" aria-label="Cambiar al tema claro" aria-pressed="false"><span class="tema-icono" aria-hidden="true">☼</span> <span>Tema</span></button>
     </div>
     <p class="ecosistema">Parte del ecosistema ARIA · <a href="https://github.com/BertMarti/ARIA" rel="noopener noreferrer">ARIA</a> · <a href="https://bertmarti.github.io/SHIELD-DNS/" rel="noopener noreferrer">SHIELD-DNS</a> · <a href="index.html">HEIMDALL</a></p>
@@ -25,8 +25,20 @@
 
   <main id="contenido">
     <section class="hero contenedor" aria-labelledby="titulo">
-      <div class="hero-copy"><p class="ceja">Tu casa, contigo</p><h1 id="titulo">Tu propia VPN para entrar en casa desde cualquier sitio</h1><p class="intro">HEIMDALL convierte una Raspberry Pi o un PC con Linux en una puerta segura para tus móviles, ordenadores y dispositivos.</p><div class="acciones"><a class="boton primario" href="#instalar">Instalar paso a paso</a><a class="boton secundario" href="https://github.com/BertMarti/HEIMDALL" rel="noopener noreferrer">Ver en GitHub</a></div></div>
+      <div class="hero-copy"><p class="ceja">Tu casa, contigo</p><h1 id="titulo">Tu propia VPN para entrar en casa desde cualquier sitio</h1><p class="intro">HEIMDALL convierte una Raspberry Pi o un PC con Linux en una puerta segura para tus móviles, ordenadores y dispositivos.</p><div class="acciones"><a class="boton primario" href="#empieza">Empieza en 5 minutos</a><a class="boton secundario" href="https://github.com/BertMarti/HEIMDALL" rel="noopener noreferrer">Ver en GitHub</a></div></div>
       <picture class="hero-art"><source media="(prefers-color-scheme: light)" srcset="img/banner-claro.svg"><img src="img/banner-oscuro.svg" alt="HEIMDALL: tu propia VPN WireGuard para entrar en casa desde cualquier sitio" width="1280" height="360"></picture>
+    </section>
+
+    <section class="seccion contenedor" id="empieza" aria-labelledby="empieza-titulo">
+      <div class="encabezado"><p class="ceja">Sin complicaciones</p><h2 id="empieza-titulo">Empieza en 5 minutos</h2><p>Cuatro pasos en tu Raspberry Pi (64 bits) o PC Linux. El instalador comprueba todo antes y te dice cómo arreglar lo que falte.</p></div>
+      <ol class="pasos rapido">
+        <li class="paso"><div class="numero" aria-hidden="true">1</div><div><h3>Descarga y comprueba</h3><p>No cambia nada: revisa Docker, la arquitectura y que los puertos de la VPN y del panel estén libres.</p><div class="comando"><pre><code>git clone https://github.com/BertMarti/HEIMDALL.git
+cd HEIMDALL &amp;&amp; ./install.sh --comprobar</code></pre><button class="copiar" type="button">Copiar</button></div></div></li>
+        <li class="paso"><div class="numero" aria-hidden="true">2</div><div><h3>Instala</h3><p>Tres preguntas con respuesta por defecto: contraseña (Enter genera una segura que verás una sola vez), tu dirección pública o DuckDNS y el puerto.</p><div class="comando"><pre><code>./install.sh</code></pre><button class="copiar" type="button">Copiar</button></div></div></li>
+        <li class="paso"><div class="numero" aria-hidden="true">3</div><div><h3>Abre un puerto en el router</h3><p>Redirige <strong>UDP 51820</strong> hacia la IP de la máquina (ejemplo: <code>192.168.1.50</code>). Solo ese: el panel se queda dentro de casa.</p></div></li>
+        <li class="paso"><div class="numero" aria-hidden="true">4</div><div><h3>Crea un cliente y escanea el QR</h3><p>En el panel, «Nuevo cliente». En el móvil, la app WireGuard → «+» → escanear QR. Pruébalo con datos, sin Wi-Fi.</p></div></li>
+      </ol>
+      <p class="estado" role="status" aria-live="polite"></p>
     </section>
 
     <section class="seccion contenedor" id="que-es" aria-labelledby="que-es-titulo">
@@ -50,7 +62,7 @@
     <section class="seccion contenedor" id="instalar" aria-labelledby="instalar-titulo">
       <div class="encabezado"><p class="ceja">Sin magia negra</p><h2 id="instalar-titulo">Instalar, paso a paso</h2><p>Sigue el orden. Los valores son ejemplos: <code>192.168.1.50</code> es la máquina de HEIMDALL y <code>192.168.1.1</code> el router.</p></div>
       <div class="pasos">
-        <article class="paso"><div class="numero">01</div><div><h3>Comprueba los requisitos</h3><p>Raspberry Pi 4/5 de 64 bits o PC/mini-PC con Debian, Ubuntu u otra distribución Linux. Necesitas una IP fija en casa, acceso al router y una IP pública sin CG-NAT. Docker Compose v2 se instala si falta.</p></div></article>
+        <article class="paso"><div class="numero">01</div><div><h3>Comprueba los requisitos</h3><p>Raspberry Pi 4/5 de 64 bits o PC/mini-PC con Debian, Ubuntu u otra distribución Linux. Necesitas una IP fija en casa, acceso al router y una IP pública sin CG-NAT. Docker Compose v2 se instala si falta. Tras clonar, <code>./install.sh --comprobar</code> lo revisa todo sin cambiar nada.</p></div></article>
         <article class="paso"><div class="numero">02</div><div><h3>Prepara la máquina</h3><div class="comando"><pre><code>sudo apt update &amp;&amp; sudo apt install -y git openssl curl</code></pre><button class="copiar" type="button">Copiar</button></div><p>¿Quieres SHIELD-DNS? Instálalo antes para que HEIMDALL lo use como DNS automáticamente.</p></div></article>
         <article class="paso"><div class="numero">03</div><div><h3>Clona e instala</h3><div class="comando"><pre><code>mkdir -p ~/homelab &amp;&amp; cd ~/homelab
 git clone https://github.com/BertMarti/HEIMDALL.git

@@ -33,8 +33,10 @@
         selection.removeAllRanges();
         selection.addRange(range);
       }
-      status.textContent = copied ? 'Copiado' : 'Selecciona y copia con Ctrl+C';
-      window.setTimeout(() => { status.textContent = ''; }, 2000);
+      // Aviso en la misma sección que el botón (hay una zona de estado en cada sección con comandos).
+      const zona = (button.closest('section') && button.closest('section').querySelector('.estado')) || status;
+      zona.textContent = copied ? 'Copiado' : 'Selecciona y copia con Ctrl+C';
+      window.setTimeout(() => { zona.textContent = ''; }, 2000);
     });
   });
 })();
