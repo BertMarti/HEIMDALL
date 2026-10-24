@@ -11,6 +11,8 @@ HEIMDALL es una VPN autoalojada basada en WireGuard (`wg-easy` v15), con Caddy c
 - Escribe documentación y mensajes en español de España.
 - Los scripts Bash usan `#!/usr/bin/env bash` y `set -euo pipefail`, y deben ser idempotentes.
 - Las variables `INIT_*` solo se aplican al crear por primera vez los datos de wg-easy. Después se usa el panel o la CLI.
+- No cambies los nombres de servicio o contenedor, los puertos ni las redes: los usa ARIA.
+- No subas versiones mayores de las imágenes sin revisar antes la compatibilidad con ARIA.
 
 ## Seguridad y producción
 
@@ -37,6 +39,8 @@ Ejecuta, cuando proceda:
 ```bash
 bash -n *.sh site/*.sh
 shellcheck *.sh site/*.sh
+./install.sh --comprobar
+tests/instalador.sh
 cp .env.example /tmp/heimdall.env
 sed -i -e 's/^WG_ADMIN_PASSWORD=.*/WG_ADMIN_PASSWORD=solo-para-ci/' -e 's/^WG_HOST=.*/WG_HOST=vpn.example.com/' -e 's/^LAN_IP=.*/LAN_IP=192.168.1.50/' -e 's/^PI_HOSTNAME=.*/PI_HOSTNAME=raspberrypi/' /tmp/heimdall.env
 ```

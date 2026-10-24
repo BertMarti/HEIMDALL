@@ -61,6 +61,7 @@ Funciona solo o como aplicación integrada en [ARIA](https://github.com/BertMart
 - [🧚 Ping](#ping)
 - [📋 Requisitos](#requisitos)
 - [🚀 Instalación](#instalación)
+- [🙋 Lo que tienes que hacer tú](#lo-que-tienes-que-hacer-tú)
 - [🚪 Abre el puerto en el router](#abre-el-puerto-en-el-router)
 - [⚙️ Configuración](#configuración)
 - [🌍 Si tu IP pública cambia (DNS dinámico)](#si-tu-ip-pública-cambia-dns-dinámico)
@@ -161,10 +162,23 @@ sudo apt update && sudo apt install -y git openssl curl
 mkdir -p ~/homelab && cd ~/homelab
 git clone https://github.com/BertMarti/HEIMDALL.git
 cd HEIMDALL
+./install.sh --comprobar
 ./install.sh
 ```
 
-**4.** Al terminar verás la dirección del panel, el usuario y dónde está la contraseña.
+`./install.sh --comprobar` solo revisa los requisitos y no cambia nada. Comprueba Docker,
+Docker Compose v2, que el sistema sea de 64 bits, `curl`, el módulo WireGuard y que los
+puertos estén libres. Si encuentra un problema, muestra cómo arreglarlo.
+
+La primera vez, el instalador abre un asistente con tres preguntas: contraseña del panel,
+dirección pública y puerto UDP. En todas puedes pulsar Enter para aceptar el valor por
+defecto. Si escribes un dominio `*.duckdns.org`, puedes añadir su token opcional. La
+contraseña se genera de forma segura, se muestra una sola vez en el resumen final y queda
+guardada en `.env`; también puedes consultarla con `grep WG_ADMIN_PASSWORD .env`. Si `.env`
+ya existe, no vuelve a preguntar nada. Sin terminal, usa los valores por defecto y no
+imprime la contraseña.
+
+**4.** Al terminar verás la dirección del panel, el usuario y los siguientes pasos.
 
 > ✅ **Comprobación:** `docker compose ps` muestra `heimdall-wg` y `heimdall-caddy` en marcha.
 
@@ -188,6 +202,17 @@ cd HEIMDALL
    ```
 
 > ✅ **Comprobación:** ves la lista de clientes (vacía la primera vez) y el botón **Nuevo**.
+
+<p align="right"><a href="#readme-top">⬆️ Volver arriba</a></p>
+
+<a id="lo-que-tienes-que-hacer-tú"></a>
+
+## 🙋 Lo que tienes que hacer tú
+
+- Abre en el router el puerto UDP de la VPN, normalmente `51820`, hacia la máquina de HEIMDALL (`192.168.1.50`).
+- Guarda la contraseña del panel cuando el instalador la muestre. Si no la guardaste, puedes consultarla en `.env` mientras no la hayas cambiado desde el panel.
+- Si quieres límites de memoria en Docker, activa `cgroup_enable=memory` en `/boot/firmware/cmdline.txt` y reinicia la Raspberry Pi. Es una operación avanzada y requiere decidirlo antes de hacerla.
+- Revisa manualmente las actualizaciones de versión mayor que Dependabot no propone: ARIA usa la API de wg-easy v15.
 
 <p align="right"><a href="#readme-top">⬆️ Volver arriba</a></p>
 
@@ -418,6 +443,9 @@ Hace una copia, descarga el código y las imágenes nuevas y vuelve a instalar. 
 ## 🆘 Problemas frecuentes
 
 <p align="right"><img alt="Ping: «¡Alerta! La VPN no ve ni un handshake»" src="docs/img/ping/ping-alerta.svg"></p>
+
+Como primer paso, ejecuta `./install.sh --comprobar`: revisa los requisitos sin cambiar nada
+y te indica el arreglo exacto si encuentra un problema.
 
 <details>
 <summary><b>Desde fuera de casa no conecta</b></summary>
