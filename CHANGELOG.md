@@ -4,11 +4,11 @@
 
 ### Añadido
 - `install.sh --comprobar`, `--sin-preguntas` y `--ayuda`, además del asistente inicial de tres preguntas y el resumen con los siguientes pasos.
-- 32 pruebas aisladas de `tests/instalador.sh` y su ejecución en CI.
+- 34 pruebas aisladas de `tests/instalador.sh` y su ejecución en CI.
 - Sección «Empieza en 5 minutos» en la web.
 
 ### Cambiado
-- `wg-easy` queda fijado a `15.4.0` y su digest exacto; Caddy mantiene `caddy:2-alpine` y DuckDNS `latest` de forma consciente.
+- `wg-easy` queda fijado a `15.4.0` y su digest exacto; Caddy a `2.11.7-alpine` con el digest que corre (`d8542f…`) y DuckDNS a `8d8f7eba-ls94` con digest.
 - Dependabot queda limitado a versiones menores y parches de imágenes.
 - `.env` se crea y conserva con permisos `600`; no se consulta la IP pública si `WG_HOST` ya está definido.
 

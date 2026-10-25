@@ -45,7 +45,7 @@ cp .env.example /tmp/heimdall.env
 sed -i -e 's/^WG_ADMIN_PASSWORD=.*/WG_ADMIN_PASSWORD=solo-para-ci/' -e 's/^WG_HOST=.*/WG_HOST=vpn.example.com/' -e 's/^LAN_IP=.*/LAN_IP=192.168.1.50/' -e 's/^PI_HOSTNAME=.*/PI_HOSTNAME=raspberrypi/' /tmp/heimdall.env
 ```
 
-Para Caddy se usa un binario local o el mismo contenedor de CI (`caddy:2-alpine`) con `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. No se valida ejecutando Docker sobre la máquina de producción.
+Para Caddy se usa un binario local o la misma imagen fijada en `docker-compose.yml` (la usa la CI) con `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. No se valida ejecutando Docker sobre la máquina de producción.
 
 Para previsualizar la web:
 

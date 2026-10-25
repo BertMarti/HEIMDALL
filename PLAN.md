@@ -12,7 +12,8 @@
 
 ## Siguiente
 
-- [ ] Fijar `lscr.io/linuxserver/duckdns:latest` a una versión concreta.
+- [x] Fijar Caddy y DuckDNS a versión y digest (revisión final).
+- [ ] Revisar a mano DuckDNS de vez en cuando (sus etiquetas no son semver).
 - [ ] Probar `read_only` sin romper WireGuard.
 - [ ] Decidir y definir límites de memoria y CPU tras medir en Raspberry Pi; antes hay que valorar activar `cgroup_enable=memory`.
 - [ ] Tomar capturas reales actualizadas de la web.

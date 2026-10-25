@@ -46,8 +46,8 @@ Es idempotente: solo rellena variables vacías y no reemplaza datos persistentes
 | Imagen | Versión | Digest |
 |---|---|---|
 | `ghcr.io/wg-easy/wg-easy` | `15.4.0` | `sha256:0e7bc9d34e86ddcaa92bc700d4d7dc9b33291dbc07ac8d13382f7c2095f949ec` |
-| `caddy` | `2-alpine` | No fijado a digest; recibe parches de seguridad dentro de la versión 2 |
-| `lscr.io/linuxserver/duckdns` | `latest` | Pendiente de fijar; perfil opcional |
+| `caddy` | `2.11.7-alpine` | `sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f` (lo que corre; `2.11.7` sin `-alpine` es otra variante) |
+| `lscr.io/linuxserver/duckdns` | `8d8f7eba-ls94` | `sha256:7736cb8f1b0cde0e24f6e80fac6c5ab9567b77e10fe62b753a4977ac767bbd5c` (perfil opcional; etiqueta no semver, revisar a mano) |
 
 La referencia completa desplegada de wg-easy es:
 `ghcr.io/wg-easy/wg-easy:15.4.0@sha256:0e7bc9d34e86ddcaa92bc700d4d7dc9b33291dbc07ac8d13382f7c2095f949ec`.
@@ -152,9 +152,9 @@ docker compose --env-file /tmp/heimdall.env --profile ddns config -q
 gitleaks git . --redact
 ```
 
-Caddy se valida con un binario instalado o en un contenedor `caddy:2-alpine`, pasando `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. No se debe ejecutar Docker sobre la máquina de producción solo para validar.
+Caddy se valida con un binario instalado o con la imagen de Caddy fijada en `docker-compose.yml`, pasando `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. No se debe ejecutar Docker sobre la máquina de producción solo para validar.
 
-`tests/instalador.sh` contiene 32 pruebas del instalador en una carpeta temporal. Sustituye
+`tests/instalador.sh` contiene 34 pruebas del instalador en una carpeta temporal. Sustituye
 Docker, `sudo`, `ss`, `curl`, `ip` y otras herramientas por dobles, por lo que no toca
 Docker real, la red ni los puertos; las pruebas que necesitan terminal usan `script`
 (util-linux).
@@ -162,7 +162,7 @@ Docker real, la red ni los puertos; las pruebas que necesitan terminal usan `scr
 La CI real tiene estos jobs:
 
 - `scripts`: `bash -n` y ShellCheck para scripts raíz, `site/` y `tests/*.sh`, además de las pruebas del instalador.
-- `compose`: crea un `.env` ficticio, ejecuta Compose con y sin `ddns`, comprueba que solo se publican `51820/udp` y `51843/tcp`, y ejecuta `caddy validate` en `caddy:2-alpine` con `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`.
+- `compose`: crea un `.env` ficticio, ejecuta Compose con y sin `ddns`, comprueba que solo se publican `51820/udp` y `51843/tcp`, y exige versión y digest en wg-easy, Caddy y DuckDNS, y ejecuta `caddy validate` con la imagen fijada con `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`.
 - `gitleaks`: descarga el binario oficial 8.30.1, verifica su suma y revisa historial y árbol.
 - `web`: ejecuta `site/construir.sh`, comprueba CSP, ausencia de inline JS/CSS y `innerHTML`, enlaces existentes y JavaScript válido.
 

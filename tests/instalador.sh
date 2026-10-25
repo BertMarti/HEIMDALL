@@ -45,6 +45,8 @@ case "$*" in
   *) exit 1 ;;
 esac'
   doble sleep 'exit 0'
+  doble awk "[ -n \"\${DOBLE_AWK_FALLA:-}\" ] && [ -n \"\${CLAVE:-}\" ] && exit 2; exec $(command -v awk) \"\$@\""
+
 }
 
 # ejecutar [VAR=valor ...] -- [argumentos de install.sh]   (sin terminal: stdin vacío)
@@ -111,6 +113,13 @@ prueba "Docker sin permiso o parado: falla y da los dos arreglos" \
 preparar; printf 'WG_PORT=65535\n' > "$CASO/repo/.env"; printf 'UNCONN 0 0 0.0.0.0:65535 0.0.0.0:*\n' > "$CASO/udp"
 ejecutar DOBLE_SS_UDP="$CASO/udp" -- --comprobar
 prueba "con el último puerto (65535) ocupado propone uno válido (65534)" eval '[ $CODIGO -eq 1 ] && salida_tiene "WG_PORT=65534"'
+
+preparar; printf 'WG_PORT=051820\n' > "$CASO/repo/.env"; ejecutar -- --comprobar
+prueba "un puerto con cero a la izquierda (051820) no es válido" eval '[ $CODIGO -eq 1 ] && salida_tiene "WG_PORT=051820 no es un puerto válido"'
+
+preparar; ejecutar DOBLE_AWK_FALLA=1 -- --sin-preguntas
+prueba "si no se puede escribir .env: se para, lo explica y no deja temporales" \
+  eval '[ $CODIGO -eq 1 ] && salida_tiene "No pude escribir" && [ -z "$(ls -A "$CASO/repo" | grep -v "^\.env\.example$" | grep "^\.env\.")" ]'
 
 preparar; ejecutar DOBLE_ARQ=armhf -- --comprobar
 prueba "Raspberry Pi OS de 32 bits: falla y dice que instale el de 64 bits" eval '[ $CODIGO -eq 1 ] && salida_tiene "Raspberry Pi OS (64-bit)"'

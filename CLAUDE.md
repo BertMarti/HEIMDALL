@@ -23,7 +23,7 @@ shellcheck *.sh site/*.sh
 docker compose --env-file /tmp/heimdall.env config -q
 ```
 
-Para Caddy, valida con un binario local o con `caddy:2-alpine` y las variables `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. Para la web:
+Para Caddy, valida con un binario local o con la imagen de Caddy fijada en `docker-compose.yml` y las variables `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. Para la web:
 
 ```bash
 site/construir.sh /tmp/heimdall-web/HEIMDALL

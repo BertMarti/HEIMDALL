@@ -209,6 +209,7 @@ imprime la contraseña.
 
 ## 🙋 Lo que tienes que hacer tú
 
+- **Tras esta actualización (fase 2):** ejecuta `./update.sh` en un momento tranquilo. No descarga imágenes nuevas, pero recrea los contenedores una vez y la VPN se corta unos segundos. Después comprueba con `docker compose ps` que `heimdall-wg` y `heimdall-caddy` están en marcha y, si usas SHIELD-DNS, que el DNS responde con `nslookup doubleclick.net 192.168.1.50` (pon la IP de tu Raspberry).
 - Abre en el router el puerto UDP de la VPN, normalmente `51820`, hacia la máquina de HEIMDALL (`192.168.1.50`).
 - Guarda la contraseña del panel cuando el instalador la muestre. Si no la guardaste, puedes consultarla en `.env` mientras no la hayas cambiado desde el panel.
 - Si quieres límites de memoria en Docker, activa `cgroup_enable=memory` en `/boot/firmware/cmdline.txt` y reinicia la Raspberry Pi. Es una operación avanzada y requiere decidirlo antes de hacerla.
