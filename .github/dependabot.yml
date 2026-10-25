@@ -1,4 +1,5 @@
 # Actualizaciones semanales y agrupadas (una PR por tipo) de imágenes Docker y GitHub Actions.
+# Las imágenes están fijadas con versión exacta y digest (docker-compose.yml): Dependabot actualiza ambos.
 version: 2
 updates:
   - package-ecosystem: "docker-compose"
@@ -7,9 +8,15 @@ updates:
       interval: "weekly"
       day: "monday"
       timezone: "Europe/Madrid"
+    # Solo parches y menores. Las versiones mayores (p. ej. wg-easy 16, unbound 2.x o Pi-hole 2027.x,
+    # que usa el año como versión mayor) se revisan a mano: ARIA usa la API de Pi-hole v6 y la de wg-easy v15.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       imagenes-docker:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
     commit-message:
       prefix: "deps(docker)"
   - package-ecosystem: "github-actions"

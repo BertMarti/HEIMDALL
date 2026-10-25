@@ -29,7 +29,7 @@ Ejecuta estos comandos en orden:
    ```
 4. **Caddyfile**:
    ```bash
-   docker run --rm -e LAN_IP=192.168.1.50 -e WEB_PORT=51843 -e PI_HOSTNAME=raspberrypi -v "$(pwd)/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+   docker run --rm -e LAN_IP=192.168.1.50 -e WEB_PORT=51843 -e PI_HOSTNAME=raspberrypi -v "$(pwd)/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
    ```
 5. **Secretos (Gitleaks)**:
    ```bash

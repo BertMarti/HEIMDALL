@@ -73,7 +73,7 @@ Tres clientes conectados en paralelo mantuvieron handshake y tráfico; el panel 
 
 ## Decisiones de seguridad
 
-- `install.sh` genera contraseñas aleatorias de 20 caracteres y las guarda en `.env` local.
+- `install.sh` genera contraseñas aleatorias de 24 caracteres y las guarda en `.env` local.
 - Caddy usa una CA interna; no se activa HSTS porque el certificado no es público.
 - El panel solo se publica en la LAN; WireGuard es el único puerto que se reenvía desde internet.
 - La API no se publica en el host y se usa detrás de Caddy.
@@ -92,13 +92,21 @@ Tres clientes conectados en paralelo mantuvieron handshake y tráfico; el panel 
 - Caddy añade cabeceras de seguridad al panel. **Sin HSTS a propósito**: el certificado es de la CA interna de Caddy y,
   con HSTS, el navegador no dejaría saltar su aviso. ARIA no incrusta el panel en un iframe, así que `X-Frame-Options DENY`
   no le afecta (comprobado en su código el 24/10/2026; conviene confirmarlo en la Pi tras fusionar).
-- Imágenes: `wg-easy:15` y `caddy:2-alpine` ya van fijadas a versión mayor; `linuxserver/duckdns:latest` queda pendiente
-  de fijar (no se cambió hoy para no tocar producción sin probar). Dependabot propondrá las subidas.
+- Imágenes: ver «24/10/2026 - fase 2» (todas fijadas con versión y digest).
 - Scripts: solo arreglos de ShellCheck sin cambio de comportamiento (perfiles de compose en array, variable de bucle).
 
 ## Estado actual (24/10/2026)
 
 Proyecto estable para uso doméstico, con CI de scripts, Compose, Caddy, secretos y web, workflow de Pages, copias probadas y documentación separada para usuarios y mantenimiento.
+
+## 24/10/2026 - fase 2
+
+- `wg-easy` queda fijado a `15.4.0` con digest; tras la revisión final también Caddy (`2.11.7-alpine@sha256:d8542f…`, lo que corre; ojo: `caddy:2.11.7` sin `-alpine` es otra variante con otro digest) y DuckDNS (`8d8f7eba-ls94@sha256:7736cb…`; etiqueta no semver de linuxserver, Dependabot puede no proponer subidas).
+- Dependabot propone solo actualizaciones menores y parches de imágenes; las mayores requieren revisar la compatibilidad de ARIA con la API de wg-easy v15.
+- `no-new-privileges:true` está probado en wg-easy y Caddy en un Compose aislado: ambos quedaron sanos, la API funcionó con Basic Auth a través de Caddy, se creó un cliente, se sirvió su QR y `wg0` quedó activo.
+- Los límites de memoria quedan pendientes. Raspberry Pi OS arranca con `cgroup_disable=memory`, por lo que Docker muestra «No memory limit support». Activarlos requiere añadir `cgroup_enable=memory` a `/boot/firmware/cmdline.txt` y reiniciar; queda pendiente de decisión de Alberto.
+- En el próximo `./update.sh` no se descargará wg-easy porque conserva el mismo digest, pero se recrearán una vez `heimdall-wg` y `heimdall-caddy` por el cambio de referencia y `security_opt`, con un corte de la VPN de unos segundos. Tampoco se descarga Caddy (mismo digest).
+- El asistente del instalador, `--comprobar`, el resumen guiado y las pruebas con dobles quedaron incorporados en esta fase.
 
 ## Referencias
 

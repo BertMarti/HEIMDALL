@@ -20,9 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Sintaxis con bash -n
-        run: for f in *.sh site/*.sh; do bash -n "$f"; done
+        run: for f in *.sh site/*.sh tests/*.sh; do bash -n "$f"; done
       - name: shellcheck
-        run: shellcheck --version && shellcheck *.sh site/*.sh
+        run: shellcheck --version && shellcheck *.sh site/*.sh tests/*.sh
+      - name: Pruebas del instalador (sin Docker real ni red)
+        run: tests/instalador.sh
 
   compose:
     name: Docker Compose y Caddyfile
@@ -48,8 +50,16 @@ jobs:
       - name: caddy validate
         run: |
           docker run --rm -e LAN_IP=192.168.1.50 -e WEB_PORT=51843 -e PI_HOSTNAME=raspberrypi \
-            -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine \
+            -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" "$(docker compose config --format json | jq -r '.services.caddy.image')" \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Imágenes fijadas (versión exacta + digest) y no-new-privileges
+        run: |
+          for s in wg-easy caddy duckdns; do
+            img=$(docker compose --profile ddns config --format json | jq -r --arg s "$s" '.services[$s].image')
+            echo "$s -> $img"
+            [[ "$img" =~ :[0-9][0-9A-Za-z.-]*@sha256:[0-9a-f]{64}$ ]] || { echo "::error::$s debe ir fijada con versión y digest"; exit 1; }
+          done
+          docker compose config --format json | jq -r '.services | to_entries[] | select(.value.security_opt != null) | "\(.key): \(.value.security_opt | join(","))"'
 
   gitleaks:
     name: Secretos (gitleaks)

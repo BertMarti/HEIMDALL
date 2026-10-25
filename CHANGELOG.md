@@ -1,5 +1,25 @@
 # Changelog
 
+## [2026-10-24] Fase 2
+
+### Añadido
+- `install.sh --comprobar`, `--sin-preguntas` y `--ayuda`, además del asistente inicial de tres preguntas y el resumen con los siguientes pasos.
+- 34 pruebas aisladas de `tests/instalador.sh` y su ejecución en CI.
+- Sección «Empieza en 5 minutos» en la web.
+
+### Cambiado
+- `wg-easy` queda fijado a `15.4.0` y su digest exacto; Caddy a `2.11.7-alpine` con el digest que corre (`d8542f…`) y DuckDNS a `8d8f7eba-ls94` con digest.
+- Dependabot queda limitado a versiones menores y parches de imágenes.
+- `.env` se crea y conserva con permisos `600`; no se consulta la IP pública si `WG_HOST` ya está definido.
+
+### Corregido
+- El instalador ya no falla por consultar la IP pública en ejecuciones posteriores cuando `WG_HOST` ya existe.
+- La comprobación previa informa de los arreglos exactos para Docker, arquitectura, herramientas y puertos.
+
+### Seguridad
+- `no-new-privileges:true` para wg-easy y Caddy, probado en un Compose aislado con API, cliente, QR y `wg0` funcionales.
+- Los límites de memoria siguen pendientes porque Raspberry Pi OS usa `cgroup_disable=memory` por defecto.
+
 ## [2026-10-24]
 
 ### Añadido

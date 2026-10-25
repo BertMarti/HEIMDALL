@@ -114,6 +114,9 @@ figcaption { margin-top: 8px; color: var(--muted); font-size: .85rem; }
 /* Instalación */
 .pasos { display: grid; gap: 12px; }
 .paso { display: grid; grid-template-columns: 58px 1fr; gap: 16px; padding: 22px; }
+.rapido { list-style: none; margin: 0; padding: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rapido .paso h3 { margin-top: 0; }
+.paso > div, .rapido > li { min-width: 0; }
 .numero { color: var(--ambar); font-weight: 850; font-size: 1.2rem; }
 .comando { display: flex; align-items: stretch; gap: 10px; margin: 14px 0; }
 pre { flex: 1; min-width: 0; margin: 0; padding: 14px; overflow-x: auto; background: #05080d; border-radius: 9px; color: #d7e5f5; }
@@ -141,6 +144,7 @@ pre code { padding: 0; background: none; color: inherit; }
 
 /* Adaptación móvil */
 @media (max-width: 900px) {
+  .rapido { grid-template-columns: minmax(0, 1fr); }
   .rejilla { grid-template-columns: repeat(2, 1fr); }
   .diagrama { flex-direction: column; }
   .flecha { transform: rotate(90deg); }

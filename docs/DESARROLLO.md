@@ -37,9 +37,32 @@ Las variables `INIT_*` del Compose solo se leen al crear los datos de wg-easy. L
 
 ## Qué mueve el instalador
 
-`install.sh` instala Docker si falta, comprueba el plugin Compose, intenta cargar WireGuard, crea `.env`, detecta `LAN_IP` y `PI_HOSTNAME`, genera la contraseña vacía, determina `WG_HOST`, elige SHIELD-DNS o `1.1.1.1`, crea `data/`, arranca los servicios y espera una respuesta del panel. Si hay subdominio y token DuckDNS activa el perfil `ddns`.
+`install.sh --comprobar` solo valida Docker, Compose v2, arquitectura de 64 bits, `curl`, el módulo WireGuard y los puertos configurados. El instalador normal instala Docker si falta, comprueba el plugin Compose, intenta cargar WireGuard, crea `.env` con permisos `600`, detecta `LAN_IP` y `PI_HOSTNAME`, ofrece un asistente de tres preguntas en una terminal nueva, determina `WG_HOST`, elige SHIELD-DNS o `1.1.1.1`, crea `data/`, arranca los servicios y espera una respuesta del panel. Si hay subdominio y token DuckDNS activa el perfil `ddns`. `--sin-preguntas` usa los valores por defecto; `--ayuda` muestra el uso. Sin terminal también usa los valores por defecto y no imprime la contraseña.
 
 Es idempotente: solo rellena variables vacías y no reemplaza datos persistentes. Si ya existe `data/wireguard/`, los cambios de `WG_*` en `.env` no cambian la configuración inicial de wg-easy.
+
+## Versiones fijadas
+
+| Imagen | Versión | Digest |
+|---|---|---|
+| `ghcr.io/wg-easy/wg-easy` | `15.4.0` | `sha256:0e7bc9d34e86ddcaa92bc700d4d7dc9b33291dbc07ac8d13382f7c2095f949ec` |
+| `caddy` | `2.11.7-alpine` | `sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f` (lo que corre; `2.11.7` sin `-alpine` es otra variante) |
+| `lscr.io/linuxserver/duckdns` | `8d8f7eba-ls94` | `sha256:7736cb8f1b0cde0e24f6e80fac6c5ab9567b77e10fe62b753a4977ac767bbd5c` (perfil opcional; etiqueta no semver, revisar a mano) |
+
+La referencia completa desplegada de wg-easy es:
+`ghcr.io/wg-easy/wg-easy:15.4.0@sha256:0e7bc9d34e86ddcaa92bc700d4d7dc9b33291dbc07ac8d13382f7c2095f949ec`.
+Para comprobar la imagen local y contrastarla con el registro:
+
+```bash
+# solo lectura: digest de la imagen con la que corre el contenedor
+docker image inspect --format '{{json .RepoDigests}}' "$(docker inspect -f '{{.Image}}' heimdall-wg)"
+docker buildx imagetools inspect ghcr.io/wg-easy/wg-easy:15.4.0
+```
+
+Para actualizar una imagen, revisa primero compatibilidad con ARIA, cambia la versión y
+el digest en `docker-compose.yml`, valida Compose y prueba en un entorno aislado antes de
+aplicar `./update.sh`. Dependabot propone parches y menores y actualiza ambos valores;
+las versiones mayores se revisan a mano porque ARIA usa la API de wg-easy v15.
 
 ## Topología, puertos y contenedores
 
@@ -121,6 +144,7 @@ Validación local:
 ```bash
 bash -n *.sh site/*.sh
 shellcheck *.sh site/*.sh
+tests/instalador.sh
 cp .env.example /tmp/heimdall.env
 sed -i -e 's/^WG_ADMIN_PASSWORD=.*/WG_ADMIN_PASSWORD=solo-para-ci/' -e 's/^WG_HOST=.*/WG_HOST=vpn.example.com/' -e 's/^LAN_IP=.*/LAN_IP=192.168.1.50/' -e 's/^PI_HOSTNAME=.*/PI_HOSTNAME=raspberrypi/' /tmp/heimdall.env
 docker compose --env-file /tmp/heimdall.env config -q
@@ -128,12 +152,17 @@ docker compose --env-file /tmp/heimdall.env --profile ddns config -q
 gitleaks git . --redact
 ```
 
-Caddy se valida con un binario instalado o en un contenedor `caddy:2-alpine`, pasando `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. No se debe ejecutar Docker sobre la máquina de producción solo para validar.
+Caddy se valida con un binario instalado o con la imagen de Caddy fijada en `docker-compose.yml`, pasando `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`. No se debe ejecutar Docker sobre la máquina de producción solo para validar.
+
+`tests/instalador.sh` contiene 34 pruebas del instalador en una carpeta temporal. Sustituye
+Docker, `sudo`, `ss`, `curl`, `ip` y otras herramientas por dobles, por lo que no toca
+Docker real, la red ni los puertos; las pruebas que necesitan terminal usan `script`
+(util-linux).
 
 La CI real tiene estos jobs:
 
-- `scripts`: `bash -n` y ShellCheck para scripts raíz y `site/`.
-- `compose`: crea un `.env` ficticio, ejecuta Compose con y sin `ddns`, comprueba que solo se publican `51820/udp` y `51843/tcp`, y ejecuta `caddy validate` en `caddy:2-alpine` con `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`.
+- `scripts`: `bash -n` y ShellCheck para scripts raíz, `site/` y `tests/*.sh`, además de las pruebas del instalador.
+- `compose`: crea un `.env` ficticio, ejecuta Compose con y sin `ddns`, comprueba que solo se publican `51820/udp` y `51843/tcp`, y exige versión y digest en wg-easy, Caddy y DuckDNS, y ejecuta `caddy validate` con la imagen fijada con `LAN_IP`, `WEB_PORT` y `PI_HOSTNAME`.
 - `gitleaks`: descarga el binario oficial 8.30.1, verifica su suma y revisa historial y árbol.
 - `web`: ejecuta `site/construir.sh`, comprueba CSP, ausencia de inline JS/CSS y `innerHTML`, enlaces existentes y JavaScript válido.
 
