@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0] - 2026-11-02
+
+Primera versión estable: lo que corre en la Raspberry de casa desde octubre de 2026.
+
+### Incluye
+- VPN WireGuard con **wg-easy**: crear dispositivos, código QR y `.conf`, con el bloqueo de anuncios de SHIELD-DNS también fuera de casa.
+- Panel HTTPS con Caddy y cabeceras de seguridad; solo se publican `51820/udp` y `51843/tcp`.
+- Instalador guiado (`install.sh`, con `--comprobar`, `--sin-preguntas` y `--ayuda`), `update.sh`, `backup.sh`, `restore.sh` y `uninstall.sh`.
+- Imágenes fijadas por versión y digest; `no-new-privileges` en wg-easy y Caddy; `.env` con permisos `600`.
+- Integración con ARIA: dispositivos de la VPN, avisos de conexión y de ubicación nueva, y resumen diario.
+- CI (ShellCheck, `docker compose config`, `caddy validate`, gitleaks, puertos publicados), Dependabot y web en GitHub Pages.
+
 ## [2026-10-24] Fase 2
 
 ### Añadido
